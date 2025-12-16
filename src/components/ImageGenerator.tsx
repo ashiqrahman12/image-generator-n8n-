@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
@@ -37,7 +37,9 @@ export function ImageGenerator() {
     const [outputFormat, setOutputFormat] = useState<"png" | "jpg">("png");
     const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
     const [isListening, setIsListening] = useState(false);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const previewRef = useRef<HTMLElement>(null);
 
     const MAX_IMAGES = 7;
     const MAX_SIZE_MB = 30;
@@ -143,6 +145,13 @@ export function ImageGenerator() {
             setLoading(false);
         }
     };
+
+    // Auto-scroll to preview on mobile when generating or result arrives
+    useEffect(() => {
+        if ((loading || generatedImage) && window.innerWidth < 1024) {
+            previewRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+    }, [loading, generatedImage]);
 
     return (
         <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
@@ -322,7 +331,7 @@ export function ImageGenerator() {
             </aside>
 
             {/* RIGHT PANEL: Preview */}
-            <main className="flex-1 bg-secondary/30 p-6 lg:p-10 flex items-center justify-center relative overflow-hidden">
+            <main ref={previewRef} className="flex-1 bg-secondary/30 p-6 lg:p-10 flex items-center justify-center relative overflow-hidden">
                 {/* Subtle dot pattern */}
                 <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
 
