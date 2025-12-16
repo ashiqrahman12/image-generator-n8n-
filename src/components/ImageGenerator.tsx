@@ -156,7 +156,7 @@ export function ImageGenerator() {
     return (
         <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)]">
             {/* LEFT PANEL: Controls */}
-            <aside className="w-full lg:w-[380px] xl:w-[420px] p-6 border-r border-border bg-white flex flex-col gap-6 lg:overflow-y-auto">
+            <aside className="w-full lg:w-[380px] xl:w-[420px] p-6 lg:pb-6 pb-32 border-r border-border bg-white flex flex-col gap-4 lg:gap-6 lg:overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -190,7 +190,7 @@ export function ImageGenerator() {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="A peaceful mountain landscape at sunrise with soft morning fog..."
-                        className="w-full h-32 p-4 rounded-2xl bg-input border border-border focus:ring-2 focus:ring-primary focus:border-primary resize-none transition-all text-sm placeholder:text-muted"
+                        className="w-full h-24 lg:h-32 p-4 rounded-2xl bg-input border border-border focus:ring-2 focus:ring-primary focus:border-primary resize-none transition-all text-sm placeholder:text-muted"
                     />
                 </div>
 
@@ -305,7 +305,7 @@ export function ImageGenerator() {
                 </div>
 
                 {/* Generate Button */}
-                <div className="mt-auto lg:pt-4 sticky bottom-0 z-10 bg-white p-4 -mx-6 -mb-6 border-t border-border lg:static lg:bg-transparent lg:p-0 lg:m-0 lg:border-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:shadow-none">
+                <div className="fixed bottom-0 left-0 right-0 lg:static z-50 bg-white/80 backdrop-blur-md p-4 border-t border-border lg:p-0 lg:bg-transparent lg:border-0 lg:shadow-none transition-all">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
