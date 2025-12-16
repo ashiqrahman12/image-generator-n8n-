@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 // n8n Webhook URL
-const N8N_WEBHOOK_URL = "https://himel15003.app.n8n.cloud/webhook-test/ai-image-generator";
+const N8N_WEBHOOK_URL = "https://himel15003.app.n8n.cloud/webhook/ai-image-generator";
 
 export async function POST(req: Request) {
     try {
