@@ -154,9 +154,9 @@ export function ImageGenerator() {
     }, [loading, generatedImage]);
 
     return (
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)]">
+        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)]">
             {/* LEFT PANEL: Controls */}
-            <aside className="w-full lg:w-[380px] xl:w-[420px] p-6 border-r border-border bg-white flex flex-col gap-6 overflow-y-auto">
+            <aside className="w-full lg:w-[380px] xl:w-[420px] p-6 border-r border-border bg-white flex flex-col gap-6 lg:overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
