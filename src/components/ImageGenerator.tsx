@@ -305,7 +305,7 @@ export function ImageGenerator() {
                 </div>
 
                 {/* Generate Button */}
-                <div className="mt-auto pt-4">
+                <div className="mt-auto lg:pt-4 sticky bottom-0 z-10 bg-white p-4 -mx-6 -mb-6 border-t border-border lg:static lg:bg-transparent lg:p-0 lg:m-0 lg:border-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] lg:shadow-none">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
