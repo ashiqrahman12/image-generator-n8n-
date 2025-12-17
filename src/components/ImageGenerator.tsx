@@ -5,6 +5,7 @@ import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Mon
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { GlowingBorder } from "@/components/ui/glowing-border";
 
 // --- Components (Shadcn-like Primitives) ---
 const SkeletonLoader = () => (
@@ -207,9 +208,6 @@ export function ImageGenerator() {
                         </div>
                     </div>
 
-                    import {GlowingBorder} from "@/components/ui/glowing-border";
-
-                    // ... [existing code]
 
                     {/* Prompt Input */}
                     <div className="space-y-2">
