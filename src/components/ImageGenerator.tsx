@@ -5,6 +5,7 @@ import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Mon
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { Progress } from "@/components/ui/progress";
 
 // --- Utility Utils (Shadcn-like) ---
 function cn(...inputs: ClassValue[]) {
@@ -53,6 +54,7 @@ const outputFormatOptions = [
 export function ImageGenerator() {
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loadingProgress, setLoadingProgress] = useState(0);
     // Updated state to hold array of images
     const [generatedImages, setGeneratedImages] = useState<string[]>([]);
     const [selectedImage, setSelectedImage] = useState<string | null>(null); // For lightbox
@@ -118,9 +120,18 @@ export function ImageGenerator() {
     const handleGenerate = async () => {
         if (!prompt.trim()) return;
         setLoading(true);
+        setLoadingProgress(0);
         setError(null);
         setGeneratedImages([]); // Clear previous results
         setSelectedImage(null);
+
+        // Simulate progress
+        const interval = setInterval(() => {
+            setLoadingProgress((prev) => {
+                if (prev >= 90) return prev; // Hold at 90% until done
+                return prev + Math.floor(Math.random() * 10) + 5;
+            });
+        }, 800);
 
         try {
             const formData = new FormData();
@@ -137,8 +148,14 @@ export function ImageGenerator() {
 
             console.log("API Response:", data); // Debug log
 
+            clearInterval(interval);
+            setLoadingProgress(100);
+
             if (data.imageUrls && data.imageUrls.length > 0) {
-                setGeneratedImages(data.imageUrls);
+                setTimeout(() => { // Small delay to show 100%
+                    setGeneratedImages(data.imageUrls);
+                    setLoading(false);
+                }, 500);
 
                 // History Logic (Save all generated, max 3 in storage)
                 try {
@@ -153,11 +170,13 @@ export function ImageGenerator() {
                     const history = stored ? JSON.parse(stored) : [];
                     localStorage.setItem("imageHistory", JSON.stringify([...newItems, ...history].slice(0, 5))); // Increased history slightly
                 } catch (e) { console.error("Failed to save history", e); }
-            } else { setError("No image data received from API"); }
+            } else { setError("No image data received from API"); setLoading(false); }
         } catch (err: any) {
+            clearInterval(interval);
             console.error("Generation error:", err);
             setError(err.message || "An error occurred.");
-        } finally { setLoading(false); }
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -347,9 +366,20 @@ export function ImageGenerator() {
                         )}
 
                         {loading && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex items-center justify-center">
-                                <div className="w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex flex-col items-center justify-center gap-6">
+                                <div className="w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl relative">
                                     <SkeletonLoader />
+
+                                    {/* Progress Overlay */}
+                                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between text-white text-xs font-medium px-1">
+                                                <span>Dreaming...</span>
+                                                <span>{loadingProgress}%</span>
+                                            </div>
+                                            <Progress value={loadingProgress} className="h-2 bg-white/20" />
+                                        </div>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
