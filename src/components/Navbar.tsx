@@ -1,15 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Menu, Home, Library, LogOut } from "lucide-react";
-import { GoogleLogin, googleLogout, CredentialResponse } from "@react-oauth/google";
-import { jwtDecode } from "jwt-decode";
+import { Sparkles, Menu, Home, Library, LogOut, ArrowRight } from "lucide-react";
+import { useGoogleLogin, googleLogout } from "@react-oauth/google";
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 interface GoogleUser {
     name: string;
     picture: string;
     email: string;
+    access_token?: string;
 }
 
 export function Navbar() {
@@ -23,13 +24,22 @@ export function Navbar() {
         }
     }, []);
 
-    const handleLoginSuccess = (credentialResponse: CredentialResponse) => {
-        if (credentialResponse.credential) {
-            const decoded: GoogleUser = jwtDecode(credentialResponse.credential);
-            setUser(decoded);
-            localStorage.setItem("googleUser", JSON.stringify(decoded));
-        }
-    };
+    const login = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await res.json();
+                const newUserData = { ...userInfo, access_token: tokenResponse.access_token };
+                setUser(newUserData);
+                localStorage.setItem("googleUser", JSON.stringify(newUserData));
+            } catch (error) {
+                console.error("Failed to fetch user info", error);
+            }
+        },
+        onError: () => console.log('Login Failed'),
+    });
 
     const handleLogout = () => {
         googleLogout();
@@ -79,16 +89,23 @@ export function Navbar() {
                             </button>
                         </div>
                     ) : (
-                        <div className="overflow-hidden rounded-xl shadow-md border border-border/50">
-                            <GoogleLogin
-                                onSuccess={handleLoginSuccess}
-                                onError={() => console.log('Login Failed')}
-                                type="icon"
-                                shape="square"
-                                theme="outline"
-                                text="signin_with"
+                        <motion.button
+                            whileHover="hover"
+                            onClick={() => login()}
+                            className="relative group cursor-pointer"
+                        >
+                            <motion.div
+                                variants={{ hover: { opacity: 1, scale: 1.1 } }}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                className="absolute -inset-1 bg-primary/30 rounded-full blur-md"
                             />
-                        </div>
+                            <div className="relative relative px-6 py-2.5 bg-primary rounded-full text-white text-sm font-semibold shadow-lg shadow-primary/30 flex items-center gap-2 transition-transform active:scale-95">
+                                Get Started
+                                <motion.div variants={{ hover: { x: 4 } }}>
+                                    <ArrowRight className="w-4 h-4" />
+                                </motion.div>
+                            </div>
+                        </motion.button>
                     )}
                 </div>
             </div>
