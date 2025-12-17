@@ -48,7 +48,7 @@ export function Navbar() {
     };
 
     return (
-        <nav className="h-16 border-b border-border bg-white sticky top-0 z-50 transition-colors">
+        <nav className="h-16 border-b border-border bg-black/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
             <div className="h-full container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5 group">
