@@ -50,19 +50,41 @@ export async function POST(req: Request) {
         const contentType = response.headers.get("content-type");
 
         if (contentType?.includes("image/")) {
-            // n8n returns binary image directly
+            // n8n returns binary image directly - convert to array
             const imageBlob = await response.blob();
             const imageBuffer = await imageBlob.arrayBuffer();
             const base64 = Buffer.from(imageBuffer).toString("base64");
             const mimeType = contentType.split(";")[0];
 
             return NextResponse.json({
-                imageUrl: `data:${mimeType};base64,${base64}`
+                imageUrls: [`data:${mimeType};base64,${base64}`]
             });
-        } else {
-            // n8n returns JSON with imageUrl
+        } else if (contentType?.includes("application/json")) {
+            // n8n returns JSON
             const data = await response.json();
-            return NextResponse.json(data);
+
+            // Check if it's an array of images or object with images
+            let images: string[] = [];
+
+            if (Array.isArray(data)) {
+                // Handle array response [ "base64/url", "base64/url" ] or [ {url: "..."} ]
+                images = data.map(item => typeof item === 'string' ? item : item.url || item.image || item.output).filter(Boolean);
+            } else if (data.images && Array.isArray(data.images)) {
+                // Handle { images: [...] }
+                images = data.images;
+            } else if (data.imageUrl || data.image || data.output) {
+                // Handle single image object { imageUrl: "..." }
+                images = [data.imageUrl || data.image || data.output];
+            } else {
+                // Try to find any property that looks like an image
+                const values = Object.values(data);
+                images = values.filter(val => typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))).map(String);
+            }
+
+            return NextResponse.json({ imageUrls: images });
+        } else {
+            // Fallback
+            return NextResponse.json({ error: "Unknown response format from n8n" }, { status: 500 });
         }
 
     } catch (error) {
