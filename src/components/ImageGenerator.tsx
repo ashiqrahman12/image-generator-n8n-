@@ -336,17 +336,13 @@ export function ImageGenerator() {
                         {generatedImages.length > 0 && (
                             <motion.div
                                 className={cn("grid gap-6 w-full auto-rows-min", getGridClass(generatedImages.length))}
-                                initial="hidden"
-                                animate="visible"
-                                variants={{
-                                    hidden: { opacity: 0 },
-                                    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
-                                }}
                             >
                                 {generatedImages.map((imgUrl, index) => (
                                     <motion.div
                                         key={index}
-                                        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ duration: 0.4, delay: index * 0.1 }}
                                         className="relative group rounded-3xl overflow-hidden shadow-2xl shadow-primary/10 bg-white/40 backdrop-blur-md border border-white/60 p-2 transition-all hover:scale-[1.02] hover:shadow-primary/20 aspect-square"
                                     >
                                         <div className="w-full h-full relative rounded-2xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(imgUrl)}>
