@@ -60,13 +60,13 @@ export function Navbar() {
 
                 {/* Nav Links - Desktop */}
                 <div className="hidden md:flex items-center gap-8">
-                    <Link href="/library" className="text-sm font-medium text-muted hover:text-primary transition-colors">
+                    <Link href="/library" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
                         Image Gallery
                     </Link>
-                    <Link href="#" className="text-sm font-medium text-muted hover:text-primary transition-colors">
+                    <Link href="#" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
                         Pricing
                     </Link>
-                    <Link href="#" className="text-sm font-medium text-muted hover:text-primary transition-colors">
+                    <Link href="#" className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors">
                         API
                     </Link>
                 </div>
@@ -82,7 +82,7 @@ export function Navbar() {
                             <img src={user.picture} alt="Profile" className="w-9 h-9 rounded-full border border-border shadow-sm" />
                             <button
                                 onClick={handleLogout}
-                                className="p-2 text-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 text-foreground/80 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Sign out"
                             >
                                 <LogOut className="w-4 h-4" />

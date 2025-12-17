@@ -281,7 +281,7 @@ export function ImageGenerator() {
                                         onClick={() => setQuality(opt.id)}
                                         className={cn(
                                             "p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 text-center bg-white/30 backdrop-blur-sm",
-                                            quality === opt.id ? "border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-md shadow-primary/10" : "border-border/60 hover:border-primary/50 text-muted"
+                                            quality === opt.id ? "border-primary bg-primary/20 text-primary-dark ring-1 ring-primary shadow-md shadow-primary/10" : "border-border/60 hover:border-primary/50 text-foreground/80"
                                         )}
                                     >
                                         <opt.icon className="w-4 h-4" />
