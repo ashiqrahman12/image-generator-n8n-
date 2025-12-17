@@ -65,8 +65,8 @@ export function ImageGenerator() {
     const previewRef = useRef<HTMLElement>(null);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    const MAX_IMAGES = 7;
-    const MAX_SIZE_MB = 4;
+    const MAX_IMAGES = 4; // reduced matching design usually
+    const MAX_SIZE_MB = 10; // slightly increased for modern standards
 
     // Voice Input Handler
     const handleVoiceInput = () => {
@@ -195,130 +195,160 @@ export function ImageGenerator() {
             {/* LEFT PANEL: Controls (Scrollable) */}
             <aside
                 ref={scrollContainerRef}
-                className="w-full lg:w-[420px] flex flex-col bg-white/50 backdrop-blur-xl border-r border-white/20 overflow-y-auto overflow-x-hidden scroll-smooth shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] z-20"
+                className="w-full lg:w-[420px] flex flex-col bg-white/5 backdrop-blur-xl border-r border-white/10 overflow-y-auto overflow-x-hidden scroll-smooth shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] z-20"
             >
-                <div className="p-5 lg:p-6 pb-40 space-y-6">
-                    {/* Header */}
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10">
-                            <Sparkles className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                            <h2 className="font-bold text-foreground">Create Image</h2>
-                            <p className="text-xs text-muted">Describe your vision</p>
-                        </div>
+                <div className="p-5 lg:p-6 pb-40 space-y-8">
+                    {/* Header - Now simplified as per design */}
+                    <div className="hidden lg:flex items-center gap-2 mb-6">
+                        <div className="h-8 w-1 bg-gradient-to-b from-purple-500 to-primary rounded-full" />
+                        <h2 className="font-bold text-xl text-white">Describe Your Vision</h2>
                     </div>
 
-
-                    {/* Prompt Input */}
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <Label>Prompt</Label>
-                            <button
-                                type="button"
-                                onClick={handleVoiceInput}
-                                className={cn("p-1.5 rounded-md transition-all", isListening ? "bg-red-900/50 text-red-500 animate-pulse" : "bg-white/10 text-foreground hover:bg-white/20")}
-                            >
-                                {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                            </button>
-                        </div>
-                        <GlowingBorder>
-                            <textarea
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="A futuristic city in the clouds..."
-                                className={cn(InputStyles, "h-28 pt-3 resize-none bg-black/80 shadow-none border-none focus:ring-0 text-white placeholder:text-gray-500")}
-                            />
-                        </GlowingBorder>
-                    </div>
-
-                    {/* Reference Images */}
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <Label>Reference Images</Label>
-                            <span className="text-xs text-muted-foreground">{refImages.length}/{MAX_IMAGES}</span>
-                        </div>
-                        <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
-                        <div className="grid grid-cols-3 gap-2">
-                            {refImages.map((img, index) => (
-                                // ... existing image map code (kept simple for brevity, user didn't ask to change inner logic)
-                                <motion.div key={index} className="relative group rounded-xl overflow-hidden border border-white/10 aspect-square">
-                                    <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
-                                    <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/50 text-white rounded-full hover:bg-red-500/80 transition-colors"><X className="w-3 h-3" /></button>
-                                </motion.div>
-                            ))}
-                            {refImages.length < MAX_IMAGES && (
-                                <GlowingBorder className="p-0">
-                                    <motion.button
-                                        whileHover={{ backgroundColor: "rgba(255,255,255, 0.1)" }}
-                                        whileTap={{ scale: 0.95 }}
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="w-full h-full aspect-square flex items-center justify-center text-muted-foreground hover:text-primary transition-colors bg-black"
+                    {/* Prompt Input Section */}
+                    <div className="space-y-3">
+                        <div className="relative group">
+                            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-primary/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-500"></div>
+                            <div className="relative bg-[#0A0A0A] rounded-2xl border border-white/10 p-4">
+                                <textarea
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    placeholder="A majestic dragon soaring through a sunset sky..."
+                                    className="w-full h-32 bg-transparent border-none focus:ring-0 text-white placeholder:text-muted-foreground/50 resize-none text-base leading-relaxed"
+                                />
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                    <span className="text-xs text-muted-foreground">{prompt.length} characters</span>
+                                    <button
+                                        type="button"
+                                        onClick={handleVoiceInput}
+                                        className={cn("flex items-center gap-1.5 text-xs font-semibold transition-colors", isListening ? "text-red-500 animate-pulse" : "text-purple-400 hover:text-purple-300")}
                                     >
+                                        {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                        {isListening ? "Stop Listening" : "Enhance Prompt"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Reference Images - Drag & Drop Style */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-base text-white font-semibold flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4 text-primary" />
+                                Reference Images
+                            </Label>
+                            <span className="text-xs text-muted-foreground">(Optional - Max 4)</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
+                            <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+
+                            {refImages.length > 0 && (
+                                <div className="grid grid-cols-4 gap-2 mb-2">
+                                    {refImages.map((img, index) => (
+                                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group">
+                                            <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
+                                            <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {refImages.length < MAX_IMAGES && (
+                                <motion.button
+                                    whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
+                                    whileTap={{ scale: 0.98 }}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="border-2 border-dashed border-white/10 rounded-2xl h-32 w-full flex flex-col items-center justify-center gap-3 text-muted-foreground hover:border-primary/50 hover:text-primary transition-all group"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
                                         <Upload className="w-5 h-5" />
-                                    </motion.button>
-                                </GlowingBorder>
+                                    </div>
+                                    <div className="text-center">
+                                        <p className="text-sm font-medium">Drag & drop or browse</p>
+                                        <p className="text-xs opacity-50 mt-1">JPG, PNG supported</p>
+                                    </div>
+                                </motion.button>
                             )}
                         </div>
                     </div>
 
-                    {/* Controls Grid */}
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-2">
-                            <Label>Quality</Label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {qualityOptions.map((opt) => (
-                                    <GlowingBorder key={opt.id} className="p-0">
-                                        <motion.button
-                                            whileHover={{ backgroundColor: "rgba(245, 200, 87, 0.1)" }}
-                                            whileTap={{ scale: 0.95 }}
+                    {/* Advanced Settings Accordion */}
+                    <SimpleAccordion.AccordionItem title="Advanced Settings" className="border-t border-white/10 pt-2">
+                        <div className="space-y-6 pt-2">
+                            {/* Quality */}
+                            <div className="space-y-3">
+                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Quality</Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {qualityOptions.map((opt) => (
+                                        <button
+                                            key={opt.id}
                                             onClick={() => setQuality(opt.id)}
                                             className={cn(
-                                                "w-full h-full p-2.5 flex flex-col items-center gap-1 text-center transition-all bg-black",
-                                                quality === opt.id ? "text-primary bg-primary/10" : "text-muted-foreground"
+                                                "px-3 py-2 rounded-lg text-sm font-medium transition-all border",
+                                                quality === opt.id
+                                                    ? "bg-primary/20 border-primary text-primary shadow-[0_0_15px_-3px_rgba(255,107,0,0.3)]"
+                                                    : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10"
                                             )}
                                         >
-                                            <opt.icon className="w-4 h-4" />
-                                            <span className="text-[10px] uppercase font-bold tracking-wide">{opt.label}</span>
-                                        </motion.button>
-                                    </GlowingBorder>
-                                ))}
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Aspect Ratio</Label>
-                                <GlowingBorder className="p-0">
-                                    <div className="relative h-12">
+                            {/* Aspect Ratio & Format */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Aspect Ratio</Label>
+                                    <div className="relative">
                                         <select
                                             value={aspectRatio}
                                             onChange={(e) => setAspectRatio(e.target.value as any)}
-                                            className={cn(InputStyles, "w-full h-full appearance-none pr-8 bg-black border-none text-white focus:ring-0")}
+                                            className="w-full h-10 pl-3 pr-8 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
                                         >
-                                            {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                                            {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black">{opt.label}</option>)}
                                         </select>
                                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                     </div>
-                                </GlowingBorder>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Format</Label>
-                                <GlowingBorder className="p-0">
-                                    <div className="relative h-12">
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Format</Label>
+                                    <div className="relative">
                                         <select
                                             value={outputFormat}
                                             onChange={(e) => setOutputFormat(e.target.value as any)}
-                                            className={cn(InputStyles, "w-full h-full appearance-none pr-8 bg-black border-none text-white focus:ring-0")}
+                                            className="w-full h-10 pl-3 pr-8 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
                                         >
-                                            {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                                            {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black">{opt.label}</option>)}
                                         </select>
                                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                                     </div>
-                                </GlowingBorder>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </SimpleAccordion.AccordionItem>
+                </div>
+
+                {/* Generate Button - Fixed at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black to-transparent z-20">
+                    <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleGenerate}
+                        disabled={loading || !prompt.trim()}
+                        className={cn(
+                            "w-full h-14 rounded-2xl font-bold text-lg text-white shadow-xl shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                        )}
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-primary to-purple-600 animate-gradient-x" />
+                        <span className="relative z-10 flex items-center justify-center gap-2">
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 fill-white" />}
+                            Generate Images
+                        </span>
+                    </motion.button>
                 </div>
             </aside>
 
@@ -419,26 +449,6 @@ export function ImageGenerator() {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-
-                {/* Desktop Generate Button */}
-                <div className="hidden lg:block absolute bottom-8 left-1/2 -translate-x-1/2 z-30 w-64">
-                    <GlowingBorder>
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleGenerate}
-                            disabled={loading || !prompt.trim()}
-                            className={cn(
-                                "h-14 w-full px-8 rounded-xl font-bold text-black transition-all flex items-center justify-center gap-2",
-                                "bg-primary hover:bg-primary-light",
-                                "disabled:opacity-50 disabled:cursor-not-allowed"
-                            )}
-                        >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                            <span>Generate Image</span>
-                        </motion.button>
-                    </GlowingBorder>
                 </div>
             </main>
 
