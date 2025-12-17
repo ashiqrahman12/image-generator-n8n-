@@ -206,12 +206,18 @@ export function ImageGenerator() {
                                 {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                             </button>
                         </div>
-                        <textarea
-                            value={prompt}
-                            onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="A futuristic city in the clouds..."
-                            className={cn(InputStyles, "h-28 pt-3 resize-none bg-white/40")}
-                        />
+                        <motion.div
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            className="relative"
+                        >
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="A futuristic city in the clouds..."
+                                className={cn(InputStyles, "h-28 pt-3 resize-none bg-white/40 shadow-sm transition-all focus:shadow-md focus:bg-white/60")}
+                            />
+                        </motion.div>
                     </div>
 
                     {/* Reference Images */}
@@ -223,17 +229,28 @@ export function ImageGenerator() {
                         <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
                         <div className="grid grid-cols-3 gap-2">
                             {refImages.map((img, index) => (
-                                <div key={index} className="relative group rounded-xl overflow-hidden border border-white/40 aspect-square shadow-sm">
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    key={index}
+                                    className="relative group rounded-xl overflow-hidden border border-white/40 aspect-square shadow-sm"
+                                >
                                     <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
-                                    <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-sm">
+                                    <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-sm hover:bg-red-50 hover:text-red-500 transition-colors">
                                         <X className="w-3 h-3" />
                                     </button>
-                                </div>
+                                </motion.div>
                             ))}
                             {refImages.length < MAX_IMAGES && (
-                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-border/60 rounded-xl flex items-center justify-center text-muted hover:border-primary hover:bg-primary/5 transition-all bg-white/20">
+                                <motion.button
+                                    whileHover={{ scale: 1.05, backgroundColor: "rgba(var(--primary), 0.1)" }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="aspect-square border-2 border-dashed border-border/60 rounded-xl flex items-center justify-center text-muted hover:border-primary hover:text-primary transition-colors bg-white/20"
+                                >
                                     <Upload className="w-5 h-5" />
-                                </button>
+                                </motion.button>
                             )}
                         </div>
                     </div>
@@ -244,17 +261,19 @@ export function ImageGenerator() {
                             <Label>Quality</Label>
                             <div className="grid grid-cols-3 gap-2">
                                 {qualityOptions.map((opt) => (
-                                    <button
+                                    <motion.button
                                         key={opt.id}
+                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileTap={{ scale: 0.95 }}
                                         onClick={() => setQuality(opt.id)}
                                         className={cn(
                                             "p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 text-center bg-white/30 backdrop-blur-sm",
-                                            quality === opt.id ? "border-primary bg-primary/10 text-primary ring-1 ring-primary" : "border-border/60 hover:border-primary/50 text-muted"
+                                            quality === opt.id ? "border-primary bg-primary/10 text-primary ring-1 ring-primary shadow-md shadow-primary/10" : "border-border/60 hover:border-primary/50 text-muted"
                                         )}
                                     >
                                         <opt.icon className="w-4 h-4" />
                                         <span className="text-[10px] uppercase font-bold tracking-wide">{opt.label}</span>
-                                    </button>
+                                    </motion.button>
                                 ))}
                             </div>
                         </div>
@@ -262,29 +281,29 @@ export function ImageGenerator() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Aspect Ratio</Label>
-                                <div className="relative">
+                                <motion.div whileHover={{ scale: 1.02 }} className="relative">
                                     <select
                                         value={aspectRatio}
                                         onChange={(e) => setAspectRatio(e.target.value as any)}
-                                        className={cn(InputStyles, "appearance-none pr-8 bg-white/40")}
+                                        className={cn(InputStyles, "appearance-none pr-8 bg-white/40 cursor-pointer hover:bg-white/60 transition-colors")}
                                     >
                                         {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-                                </div>
+                                </motion.div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Format</Label>
-                                <div className="relative">
+                                <motion.div whileHover={{ scale: 1.02 }} className="relative">
                                     <select
                                         value={outputFormat}
                                         onChange={(e) => setOutputFormat(e.target.value as any)}
-                                        className={cn(InputStyles, "appearance-none pr-8 bg-white/40")}
+                                        className={cn(InputStyles, "appearance-none pr-8 bg-white/40 cursor-pointer hover:bg-white/60 transition-colors")}
                                     >
                                         {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                                     </select>
                                     <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
-                                </div>
+                                </motion.div>
                             </div>
                         </div>
                     </div>
@@ -293,18 +312,20 @@ export function ImageGenerator() {
 
             {/* Sticky Action Footer (Mobile Only - Glassmorphism) */}
             <div className="lg:hidden fixed bottom-[4.5rem] left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-white/20 z-40 pb-4 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
-                <button
+                <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.95 }}
                     onClick={handleGenerate}
                     disabled={loading || !prompt.trim()}
                     className={cn(
-                        "w-full h-12 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/30 active:scale-95",
+                        "w-full h-12 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/30",
                         "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
-                        "disabled:opacity-50 disabled:cursor-not-allowed"
+                        "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                     )}
                 >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                     <span>{loading ? "Generating..." : "Generate Image"}</span>
-                </button>
+                </motion.button>
             </div>
 
             {/* RIGHT PANEL: Preview (Masonry Layout) */}
@@ -379,18 +400,20 @@ export function ImageGenerator() {
 
                 {/* Desktop Generate Button */}
                 <div className="hidden lg:block absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05, boxShadow: "0 25px 50px -12px rgba(99, 102, 241, 0.25)" }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "h-14 px-8 rounded-full font-bold text-white transition-all flex items-center justify-center gap-2 shadow-2xl shadow-primary/30 hover:shadow-primary/40 active:scale-95 border-4 border-white/20",
-                            "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
-                            "disabled:opacity-50 disabled:cursor-not-allowed"
+                            "h-14 px-8 rounded-full font-bold text-white transition-all flex items-center justify-center gap-2 shadow-2xl shadow-primary/30 border-4 border-white/20",
+                            "bg-gradient-to-r from-primary to-primary-dark",
+                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
                         )}
                     >
                         {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
                         <span>Generate Image</span>
-                    </button>
+                    </motion.button>
                 </div>
             </main>
 
