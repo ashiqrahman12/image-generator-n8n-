@@ -22,7 +22,7 @@ export const GlowingBorder = ({
             {...props}
         >
             {/* Spinning Gradient Layer */}
-            <div className="absolute inset-[-100%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#000000_50%,#F5C857_100%)]" />
+            <div className="absolute inset-[-100%] animate-[spin_4s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#000000_50%,#FF6B00_100%)]" />
 
             {/* Inner Content Layer (Masks the center) */}
             <div className={cn("relative h-full w-full bg-black rounded-xl", className)}>

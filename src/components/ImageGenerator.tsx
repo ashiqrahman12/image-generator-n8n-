@@ -3,9 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { GlowingBorder } from "@/components/ui/glowing-border";
+import * as SimpleAccordion from "@/components/ui/simple-accordion";
 
 // --- Components (Shadcn-like Primitives) ---
 const SkeletonLoader = () => (
