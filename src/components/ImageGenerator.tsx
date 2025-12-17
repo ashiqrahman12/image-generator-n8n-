@@ -3,25 +3,36 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-function cn(...inputs: (string | undefined | null | false)[]) {
+// --- Utility Utils (Shadcn-like) ---
+function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
+// --- Components (Shadcn-like Primitives) ---
 const SkeletonLoader = () => (
-    <div className="w-full h-full relative overflow-hidden bg-secondary/30 rounded-3xl">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+    <div className="w-full h-full relative overflow-hidden bg-secondary/20 rounded-3xl border border-white/50">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
         <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3 opacity-20">
-                <Sparkles className="w-12 h-12" />
-                <p className="font-medium text-sm">Dreaming...</p>
+            <div className="flex flex-col items-center gap-3 opacity-30">
+                <Sparkles className="w-12 h-12 text-primary" />
+                <p className="font-medium text-sm text-primary">Dreaming...</p>
             </div>
         </div>
     </div>
 );
 
+const Label = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+    <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)}>
+        {children}
+    </label>
+);
+
+const InputStyles = "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm";
+
+// --- Options Data ---
 const qualityOptions = [
     { id: "1k", label: "1K", icon: Monitor, desc: "1024px" },
     { id: "2k", label: "2K", icon: Monitor, desc: "2048px" },
@@ -29,9 +40,9 @@ const qualityOptions = [
 ] as const;
 
 const aspectRatioOptions = [
-    { id: "1:1", label: "1:1", desc: "Square" },
-    { id: "9:16", label: "9:16", desc: "Portrait" },
-    { id: "16:9", label: "16:9", desc: "Landscape" },
+    { id: "1:1", label: "Square", desc: "1:1" },
+    { id: "9:16", label: "Portrait", desc: "9:16" },
+    { id: "16:9", label: "Landscape", desc: "16:9" },
 ] as const;
 
 const outputFormatOptions = [
@@ -52,61 +63,43 @@ export function ImageGenerator() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const previewRef = useRef<HTMLElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const MAX_IMAGES = 7;
-    // Vercel Serverless Function limit is 4.5MB for the Request Body. 
-    // Setting safety limit to 4MB to prevent 413 Payload Too Large errors.
     const MAX_SIZE_MB = 4;
 
-    // Voice Input Handler using Web Speech API
+    // Voice Input Handler
     const handleVoiceInput = () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             alert('Voice input is not supported in your browser.');
             return;
         }
-
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
         recognition.continuous = false;
         recognition.interimResults = false;
         recognition.lang = 'en-US';
-
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => setIsListening(false);
         recognition.onerror = () => setIsListening(false);
-
         recognition.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript;
             setPrompt((prev) => prev ? `${prev} ${transcript}` : transcript);
         };
-
-        if (isListening) {
-            recognition.stop();
-        } else {
-            recognition.start();
-        }
+        isListening ? recognition.stop() : recognition.start();
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
-
         const newImages: { file: File; preview: string }[] = [];
         let totalSize = refImages.reduce((acc, img) => acc + img.file.size, 0);
-
         Array.from(files).forEach((file) => {
-            if (refImages.length + newImages.length >= MAX_IMAGES) {
-                alert(`Maximum ${MAX_IMAGES} images allowed.`);
-                return;
-            }
+            if (refImages.length + newImages.length >= MAX_IMAGES) return alert(`Maximum ${MAX_IMAGES} images allowed.`);
             totalSize += file.size;
-            if (totalSize > MAX_SIZE_MB * 1024 * 1024) {
-                alert(`Total size exceeds ${MAX_SIZE_MB}MB limit.`);
-                return;
-            }
+            if (totalSize > MAX_SIZE_MB * 1024 * 1024) return alert(`Total size exceeds ${MAX_SIZE_MB}MB limit.`);
             newImages.push({ file, preview: URL.createObjectURL(file) });
         });
-
         setRefImages((prev) => [...prev, ...newImages]);
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
@@ -125,350 +118,240 @@ export function ImageGenerator() {
         setLoading(true);
         setError(null);
         setGeneratedImage(null);
-
         try {
-            // Build FormData to send prompt, quality, aspect ratio, and reference image as binary
             const formData = new FormData();
             formData.append("prompt", prompt);
             formData.append("quality", quality);
             formData.append("aspectRatio", aspectRatio);
             formData.append("outputFormat", outputFormat);
-
-            // Append all reference images as binary files
-            refImages.forEach((img, index) => {
-                formData.append(`referenceImage_${index}`, img.file, img.file.name);
-            });
+            refImages.forEach((img, index) => formData.append(`referenceImage_${index}`, img.file, img.file.name));
             formData.append("referenceImageCount", String(refImages.length));
 
-            const response = await fetch("/api/generate", {
-                method: "POST",
-                body: formData, // FormData automatically sets correct Content-Type
-            });
-
+            const response = await fetch("/api/generate", { method: "POST", body: formData });
             if (!response.ok) throw new Error("Failed to generate image");
             const data = await response.json();
+
             if (data.imageUrl) {
                 setGeneratedImage(data.imageUrl);
-
-                // Save to LocalStorage History
+                // History Logic
                 try {
-                    const newItem = {
-                        id: Date.now().toString(),
-                        image: data.imageUrl,
-                        prompt: prompt,
-                        timestamp: Date.now()
-                    };
+                    const newItem = { id: Date.now().toString(), image: data.imageUrl, prompt: prompt, timestamp: Date.now() };
                     const stored = localStorage.getItem("imageHistory");
                     const history = stored ? JSON.parse(stored) : [];
-                    // Keep only last 3 images to avoid QuotaExceededError
-                    const updatedHistory = [newItem, ...history].slice(0, 3);
-                    localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
-                } catch (e) {
-                    console.error("Failed to save to history", e);
-                }
-            } else {
-                setError("No image data received");
-            }
+                    localStorage.setItem("imageHistory", JSON.stringify([newItem, ...history].slice(0, 3)));
+                } catch (e) { console.error("Failed to save history", e); }
+            } else { setError("No image data received"); }
         } catch (err: any) {
             console.error("Generation error:", err);
-            setError(err.message || "An error occurred. Please try again.");
-        } finally {
-            setLoading(false);
-        }
+            setError(err.message || "An error occurred.");
+        } finally { setLoading(false); }
     };
 
-    // Auto-scroll to preview on mobile when generating or result arrives
     useEffect(() => {
         if ((loading || generatedImage) && window.innerWidth < 1024) {
-            previewRef.current?.scrollIntoView({ behavior: "smooth" });
+            // On mobile, slight delay to allow rendering then scroll
+            setTimeout(() => {
+                previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
         }
     }, [loading, generatedImage]);
 
     return (
-        <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)]">
-            {/* LEFT PANEL: Controls */}
-            <aside className="w-full lg:w-[380px] xl:w-[420px] p-5 lg:p-6 pb-[300px] lg:pb-6 border-r border-border bg-white flex flex-col gap-5 lg:gap-6 lg:overflow-y-auto">
-                {/* Header */}
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Sparkles className="w-5 h-5 text-primary" />
+        <div className="flex flex-col lg:flex-row h-[calc(100dvh-4rem)] bg-background">
+            {/* LEFT PANEL: Controls (Scrollable) */}
+            <aside
+                ref={scrollContainerRef}
+                className="w-full lg:w-[420px] flex flex-col bg-background/50 border-r border-border overflow-y-auto overflow-x-hidden scroll-smooth"
+            >
+                <div className="p-5 lg:p-6 pb-40 space-y-6">
+                    {/* Header */}
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Sparkles className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                            <h2 className="font-bold text-foreground">Create Image</h2>
+                            <p className="text-xs text-muted">Describe your vision</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="font-bold text-foreground">Create Image</h2>
-                        <p className="text-xs text-muted">Describe your vision</p>
-                    </div>
-                </div>
 
-                {/* Prompt Input */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-foreground">Prompt</label>
-                        <button
-                            type="button"
-                            onClick={handleVoiceInput}
-                            className={cn(
-                                "p-2 rounded-lg transition-all",
-                                isListening
-                                    ? "bg-red-100 text-red-500 animate-pulse"
-                                    : "bg-primary/10 text-primary hover:bg-primary/20"
-                            )}
-                            title={isListening ? "Stop listening" : "Voice input"}
-                        >
-                            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                        </button>
+                    {/* Prompt Input */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label>Prompt</Label>
+                            <button
+                                type="button"
+                                onClick={handleVoiceInput}
+                                className={cn("p-1.5 rounded-md transition-all", isListening ? "bg-red-100 text-red-500 animate-pulse" : "bg-secondary text-primary hover:bg-secondary/80")}
+                            >
+                                {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+                            </button>
+                        </div>
+                        <textarea
+                            value={prompt}
+                            onChange={(e) => setPrompt(e.target.value)}
+                            placeholder="A futuristic city in the clouds..."
+                            className={cn(InputStyles, "h-28 pt-3 resize-none")}
+                        />
                     </div>
-                    <textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="A peaceful mountain landscape at sunrise with soft morning fog..."
-                        className="w-full h-24 lg:h-32 p-4 rounded-2xl bg-input border border-border focus:ring-2 focus:ring-primary focus:border-primary resize-none transition-all text-sm placeholder:text-muted"
-                    />
-                </div>
 
-                {/* Reference Images */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <label className="text-sm font-semibold text-foreground">Reference Images</label>
-                        <span className="text-xs text-muted">{refImages.length}/{MAX_IMAGES}</span>
-                    </div>
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        accept="image/*"
-                        multiple
-                        onChange={handleFileChange}
-                        className="hidden"
-                    />
-                    {refImages.length > 0 ? (
-                        <div className="space-y-3">
-                            <div className="grid grid-cols-3 gap-2">
-                                {refImages.map((img, index) => (
-                                    <div key={index} className="relative group rounded-xl overflow-hidden border border-border aspect-square">
-                                        <img src={img.preview} alt={`Reference ${index + 1}`} className="w-full h-full object-cover" />
-                                        <button
-                                            onClick={() => removeImage(index)}
-                                            className="absolute top-1 right-1 p-1 bg-white/90 rounded-full text-foreground hover:bg-white transition-colors shadow-sm opacity-0 group-hover:opacity-100"
-                                        >
-                                            <X className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                                {refImages.length < MAX_IMAGES && (
-                                    <button
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="aspect-square border-2 border-dashed border-border rounded-xl flex items-center justify-center text-muted hover:border-primary hover:bg-primary/5 transition-all"
-                                    >
-                                        <Upload className="w-5 h-5" />
+                    {/* Reference Images */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label>Reference Images</Label>
+                            <span className="text-xs text-muted">{refImages.length}/{MAX_IMAGES}</span>
+                        </div>
+                        <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+                        <div className="grid grid-cols-3 gap-2">
+                            {refImages.map((img, index) => (
+                                <div key={index} className="relative group rounded-xl overflow-hidden border border-border aspect-square">
+                                    <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
+                                    <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-sm">
+                                        <X className="w-3 h-3" />
                                     </button>
-                                )}
+                                </div>
+                            ))}
+                            {refImages.length < MAX_IMAGES && (
+                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-border rounded-xl flex items-center justify-center text-muted hover:border-primary hover:bg-primary/5 transition-all">
+                                    <Upload className="w-5 h-5" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Controls Grid */}
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="space-y-2">
+                            <Label>Quality</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                {qualityOptions.map((opt) => (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => setQuality(opt.id)}
+                                        className={cn(
+                                            "p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 text-center",
+                                            quality === opt.id ? "border-primary bg-primary/10 text-primary ring-1 ring-primary" : "border-border hover:border-primary/50 text-muted"
+                                        )}
+                                    >
+                                        <opt.icon className="w-4 h-4" />
+                                        <span className="text-[10px] uppercase font-bold tracking-wide">{opt.label}</span>
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    ) : (
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="w-full h-28 border-2 border-dashed border-border rounded-2xl flex flex-col items-center justify-center text-muted hover:border-primary hover:bg-primary/5 transition-all group"
-                        >
-                            <Upload className="w-6 h-6 mb-2 group-hover:text-primary transition-colors" />
-                            <span className="text-sm group-hover:text-primary transition-colors">Upload references</span>
-                            <span className="text-xs text-muted mt-1">Up to 7 images, max 30MB total</span>
-                        </button>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Aspect Ratio</Label>
+                                <div className="relative">
+                                    <select
+                                        value={aspectRatio}
+                                        onChange={(e) => setAspectRatio(e.target.value as any)}
+                                        className={cn(InputStyles, "appearance-none pr-8")}
+                                    >
+                                        {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Format</Label>
+                                <div className="relative">
+                                    <select
+                                        value={outputFormat}
+                                        onChange={(e) => setOutputFormat(e.target.value as any)}
+                                        className={cn(InputStyles, "appearance-none pr-8")}
+                                    >
+                                        {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted pointer-events-none" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Sticky Action Footer (Mobile Only) */}
+            <div className="lg:hidden fixed bottom-[4.5rem] left-0 right-0 p-4 bg-white/95 backdrop-blur-xl border-t border-border z-40 pb-4">
+                <button
+                    onClick={handleGenerate}
+                    disabled={loading || !prompt.trim()}
+                    className={cn(
+                        "w-full h-12 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/25 active:scale-95",
+                        "bg-primary hover:bg-primary-dark",
+                        "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
+                >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                    <span>{loading ? "Generating..." : "Generate Image"}</span>
+                </button>
+            </div>
+
+            {/* RIGHT PANEL: Preview */}
+            <main ref={previewRef} className="flex-1 bg-secondary/30 relative flex flex-col items-center p-4 lg:p-10 overflow-y-auto">
+                {/* Dot Pattern */}
+                <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+
+                <div className="w-full max-w-3xl flex-1 flex flex-col justify-center min-h-[500px] lg:min-h-0 pb-32 lg:pb-0">
+                    <AnimatePresence mode="wait">
+                        {!generatedImage && !loading && !error && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
+                                <div className="w-24 h-24 bg-white rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary/5 border border-white/50">
+                                    <ImageIcon className="w-10 h-10 text-primary/30" />
+                                </div>
+                                <h3 className="text-lg font-bold text-foreground">Canvas Ready</h3>
+                                <p className="text-sm text-muted">Your imagination is the limit.</p>
+                            </motion.div>
+                        )}
+                        {loading && (
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full aspect-square lg:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl shadow-primary/10">
+                                <SkeletonLoader />
+                            </motion.div>
+                        )}
+                        {generatedImage && (
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative group w-full">
+                                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-primary/20 bg-white p-2 border border-white/50">
+                                    <img src={generatedImage} alt="Generated" className="w-full h-auto rounded-2xl" />
+                                </div>
+                                {/* Mobile Actions */}
+                                <div className="flex gap-3 mt-4 lg:hidden">
+                                    <a href={generatedImage} download={`ai-gen-${Date.now()}.png`} className="flex-1 h-12 bg-foreground text-background rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
+                                        <Download className="w-4 h-4" /> Save
+                                    </a>
+                                    <button className="h-12 w-12 bg-white text-foreground border border-border rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                                        <Share2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                {/* Desktop Actions */}
+                                <div className="hidden lg:flex absolute bottom-6 right-6 gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
+                                    <a href={generatedImage} download className="p-3 bg-white text-foreground rounded-xl shadow-lg hover:scale-105 transition-all"><Download className="w-5 h-5" /></a>
+                                </div>
+                            </motion.div>
+                        )}
+                        {error && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 text-red-600 px-6 py-4 rounded-xl border border-red-100 text-center">
+                                {error}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
-                {/* Quality Selector */}
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Quality</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        {qualityOptions.map((opt) => (
-                            <button
-                                key={opt.id}
-                                onClick={() => setQuality(opt.id)}
-                                className={cn(
-                                    "p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1.5 text-center",
-                                    quality === opt.id
-                                        ? "border-primary bg-primary/10 text-primary"
-                                        : "border-border hover:border-primary/40 text-muted hover:text-foreground"
-                                )}
-                            >
-                                <opt.icon className="w-5 h-5" />
-                                <span className="text-xs font-semibold">{opt.label}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Aspect Ratio Selector */}
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Aspect Ratio</label>
-                    <div className="relative">
-                        <select
-                            value={aspectRatio}
-                            onChange={(e) => setAspectRatio(e.target.value as "1:1" | "9:16" | "16:9")}
-                            className="w-full appearance-none p-3 pr-10 rounded-xl border-2 border-border bg-input text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
-                        >
-                            {aspectRatioOptions.map((opt) => (
-                                <option key={opt.id} value={opt.id}>
-                                    {opt.label} - {opt.desc}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
-                    </div>
-                </div>
-
-                {/* Output Format Selector */}
-                <div className="space-y-2">
-                    <label className="text-sm font-semibold text-foreground">Output Format</label>
-                    <div className="relative">
-                        <select
-                            value={outputFormat}
-                            onChange={(e) => setOutputFormat(e.target.value as "png" | "jpg")}
-                            className="w-full appearance-none p-4 pr-10 rounded-2xl border border-border bg-input text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer shadow-sm text-base font-medium"
-                        >
-                            {outputFormatOptions.map((opt) => (
-                                <option key={opt.id} value={opt.id}>
-                                    {opt.label} - {opt.desc}
-                                </option>
-                            ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
-                    </div>
-                </div>
-
-                {/* Mobile Scroll Spacer - Extra Large for Safety */}
-                <div className="h-24 lg:hidden" />
-
-                {/* Generate Button - Mobile Sticky */}
-                <div className="fixed bottom-[90px] left-4 right-4 lg:static z-50 transition-all lg:p-0">
+                {/* Desktop Generate Button (Visible only on Large screens) */}
+                <div className="hidden lg:block absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "w-full h-14 rounded-full font-bold text-white transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-xl shadow-primary/25 lg:rounded-2xl",
-                            "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
-                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                            "h-14 px-8 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 active:scale-95",
+                            "bg-primary hover:bg-primary-dark",
+                            "disabled:opacity-50 disabled:cursor-not-allowed"
                         )}
                     >
-                        {loading ? (
-                            <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>Generating...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles className="w-5 h-5" />
-                                <span>Generate Image</span>
-                            </>
-                        )}
+                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                        <span>Generate Image</span>
                     </button>
                 </div>
-            </aside>
-
-            {/* RIGHT PANEL: Preview */}
-            <main ref={previewRef} className="flex-1 bg-secondary/30 p-6 lg:p-10 pb-40 lg:pb-10 flex items-center justify-center relative overflow-hidden min-h-[50vh]">
-                {/* Subtle dot pattern */}
-                <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
-
-                <AnimatePresence mode="wait">
-                    {!generatedImage && !loading && !error && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="text-center max-w-md"
-                        >
-                            <div className="w-28 h-28 bg-white rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl shadow-primary/10 border border-border">
-                                <ImageIcon className="w-12 h-12 text-primary/40" />
-                            </div>
-                            <h3 className="text-xl font-bold text-foreground mb-2">Ready to Create</h3>
-                            <p className="text-sm text-muted">Enter a prompt and watch the magic happen.</p>
-                        </motion.div>
-                    )}
-
-                    {loading && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="relative w-full max-w-3xl aspect-square lg:aspect-auto lg:h-[70vh]"
-                        >
-                            <SkeletonLoader />
-                        </motion.div>
-                    )}
-
-                    {generatedImage && (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            className="relative group max-w-3xl w-full"
-                        >
-                            <div className="rounded-3xl overflow-hidden shadow-2xl shadow-primary/20 bg-white p-3 border border-border">
-                                <img
-                                    src={generatedImage}
-                                    alt="Generated Artwork"
-                                    className="w-full h-auto rounded-3xl object-cover max-h-[70vh] shadow-sm"
-                                />
-                            </div>
-
-                            {/* Mobile Native Download Button */}
-                            <div className="mt-6 flex flex-col gap-3 lg:hidden">
-                                <button
-                                    onClick={() => {
-                                        if (generatedImage) {
-                                            const link = document.createElement('a');
-                                            link.href = generatedImage;
-                                            link.download = `ai-generated-${Date.now()}.png`;
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                        }
-                                    }}
-                                    className="w-full py-4 bg-foreground text-background rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
-                                >
-                                    <Download className="w-5 h-5" />
-                                    Download Image
-                                </button>
-                                <button className="w-full py-4 bg-white text-foreground border border-border rounded-2xl font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2">
-                                    <Share2 className="w-5 h-5" />
-                                    Share
-                                </button>
-                            </div>
-
-                            {/* Desktop Actions Overlay */}
-                            <div className="hidden lg:flex absolute bottom-8 right-8 gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-                                <button
-                                    onClick={() => {
-                                        if (generatedImage) {
-                                            const link = document.createElement('a');
-                                            link.href = generatedImage;
-                                            link.download = `ai-generated-${Date.now()}.png`;
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                        }
-                                    }}
-                                    className="p-3 bg-white text-foreground rounded-xl shadow-lg hover:shadow-xl border border-border hover:border-primary transition-all"
-                                    title="Download"
-                                >
-                                    <Download className="w-5 h-5" />
-                                </button>
-                                <button className="p-3 bg-primary text-white rounded-xl shadow-lg hover:shadow-xl hover:bg-primary-dark transition-all" title="Share">
-                                    <Share2 className="w-5 h-5" />
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-
-                    {error && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="bg-red-50 text-red-600 px-6 py-4 rounded-2xl border border-red-100 shadow-sm"
-                        >
-                            {error}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
             </main>
         </div>
     );
