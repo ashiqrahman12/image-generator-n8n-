@@ -168,7 +168,7 @@ export function ImageGenerator() {
     return (
         <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)]">
             {/* LEFT PANEL: Controls */}
-            <aside className="w-full lg:w-[380px] xl:w-[420px] p-6 lg:pb-6 pb-48 border-r border-border bg-white flex flex-col gap-4 lg:gap-6 lg:overflow-y-auto">
+            <aside className="w-full lg:w-[380px] xl:w-[420px] p-6 lg:pb-6 pb-64 border-r border-border bg-white flex flex-col gap-4 lg:gap-6 lg:overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -315,6 +315,9 @@ export function ImageGenerator() {
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
                     </div>
                 </div>
+
+                {/* Mobile Scroll Spacer */}
+                <div className="h-24 lg:hidden" />
 
                 {/* Generate Button */}
                 <div className="fixed bottom-24 left-4 right-4 lg:static z-50 transition-all lg:p-0">
