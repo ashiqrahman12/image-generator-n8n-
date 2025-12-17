@@ -1,7 +1,42 @@
+"use client";
+
 import Link from "next/link";
-import { Sparkles, Menu, Home, Library } from "lucide-react";
+import { Sparkles, Menu, Home, Library, LogOut } from "lucide-react";
+import { GoogleLogin, googleLogout, CredentialResponse } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+import { useState, useEffect } from "react";
+
+interface GoogleUser {
+    name: string;
+    picture: string;
+    email: string;
+}
 
 export function Navbar() {
+    const [user, setUser] = useState<GoogleUser | null>(null);
+
+    // Check for persisted session on mount
+    useEffect(() => {
+        const storedUser = localStorage.getItem("googleUser");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
+    const handleLoginSuccess = (credentialResponse: CredentialResponse) => {
+        if (credentialResponse.credential) {
+            const decoded: GoogleUser = jwtDecode(credentialResponse.credential);
+            setUser(decoded);
+            localStorage.setItem("googleUser", JSON.stringify(decoded));
+        }
+    };
+
+    const handleLogout = () => {
+        googleLogout();
+        setUser(null);
+        localStorage.removeItem("googleUser");
+    };
+
     return (
         <nav className="h-16 border-b border-border bg-white sticky top-0 z-50">
             <div className="h-full container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -28,10 +63,33 @@ export function Navbar() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
-                    <button className="hidden sm:flex px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 hover:bg-primary-dark transition-all">
-                        Get Started
-                    </button>
-                    {/* Mobile Menu Button Removed as per redesign */}
+                    {user ? (
+                        <div className="flex items-center gap-3">
+                            <div className="hidden sm:block text-right">
+                                <p className="text-xs font-bold text-foreground">{user.name}</p>
+                                <p className="text-[10px] text-muted">{user.email}</p>
+                            </div>
+                            <img src={user.picture} alt="Profile" className="w-9 h-9 rounded-full border border-border shadow-sm" />
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 text-muted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Sign out"
+                            >
+                                <LogOut className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="overflow-hidden rounded-xl shadow-md border border-border/50">
+                            <GoogleLogin
+                                onSuccess={handleLoginSuccess}
+                                onError={() => console.log('Login Failed')}
+                                type="icon"
+                                shape="square"
+                                theme="outline"
+                                text="signin_with"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
