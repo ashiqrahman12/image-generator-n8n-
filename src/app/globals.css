@@ -10,41 +10,41 @@
   /* Yellow/Orange Brand Theme #F5C857 */
   /* RGB: 245, 200, 87 */
 
-  --background: #ffffff;
-  --foreground: #111827;
-  /* Darker gray for better contrast with yellow */
+  --background: #000000;
+  /* Pure Black */
+  --foreground: #ffffff;
+  /* White text for maximum contrast on black */
 
   /* Primary: #F5C857 (Vibrant Yellow) */
   --primary: #F5C857;
   --primary-foreground: #000000;
-  /* Black text on yellow button is mostly legible/bold */
 
   --primary-light: #F7D47C;
   /* Lighter tint */
   --primary-dark: #D4A633;
   /* Darker mustard for active */
 
-  /* Secondary: Very light Yellow tint */
-  --secondary: #FEF9EB;
-  --secondary-foreground: #D4A633;
+  /* Secondary: Darker gray/black for subtle contrast */
+  --secondary: #111111;
+  --secondary-foreground: #F5C857;
 
   /* Accent */
   --accent: #F5C857;
   --accent-foreground: #000000;
 
-  --muted: #f3f4f6;
-  --muted-foreground: #6b7280;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
 
-  --border: #e5e7eb;
-  --input: #f9fafb;
+  --border: #333333;
+  --input: #111111;
   --ring: #F5C857;
 
-  --card: #ffffff;
-  --card-foreground: #111827;
-  --card-hover: #FFFDF5;
+  --card: #000000;
+  --card-foreground: #ffffff;
+  --card-hover: #111111;
 
-  --popover: #ffffff;
-  --popover-foreground: #111827;
+  --popover: #000000;
+  --popover-foreground: #ffffff;
 
   --radius: 0.75rem;
   /* Slightly rounder */
