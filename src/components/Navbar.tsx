@@ -13,42 +13,13 @@ interface GoogleUser {
     access_token?: string;
 }
 
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+
 export function Navbar() {
-    const [user, setUser] = useState<GoogleUser | null>(null);
-
-    // Check for persisted session on mount
-    useEffect(() => {
-        const storedUser = localStorage.getItem("googleUser");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-    const login = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            try {
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const userInfo = await res.json();
-                const newUserData = { ...userInfo, access_token: tokenResponse.access_token };
-                setUser(newUserData);
-                localStorage.setItem("googleUser", JSON.stringify(newUserData));
-            } catch (error) {
-                console.error("Failed to fetch user info", error);
-            }
-        },
-        onError: () => console.log('Login Failed'),
-    });
-
-    const handleLogout = () => {
-        googleLogout();
-        setUser(null);
-        localStorage.removeItem("googleUser");
-    };
+    // ... existing state assignments ...
 
     return (
-        <nav className="h-16 border-b border-border bg-white sticky top-0 z-50">
+        <nav className="h-16 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-50 transition-colors">
             <div className="h-full container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2.5 group">
@@ -73,6 +44,7 @@ export function Navbar() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
+                    <ThemeToggle />
                     {user ? (
                         <div className="flex items-center gap-3">
                             <div className="hidden sm:block text-right">
