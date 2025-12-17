@@ -1,30 +1,32 @@
 @import "tailwindcss";
 
 :root {
-  /* Sage Green Theme - Clean & Modern */
+  /* Teal Theme - Premium & Bold */
   --background: #ffffff;
   --foreground: #1f2937;
 
-  /* Primary: Sage Green #90AB8B */
-  --primary: #90AB8B;
-  --primary-light: #b8d4b2;
-  --primary-dark: #6b8a66;
+  /* Primary: Teal #0F828C (RGB: 15, 130, 140) */
+  --primary: #0F828C;
+  --primary-light: #3DAFB9;
+  /* Lighter tint for hover */
+  --primary-dark: #0A5E66;
+  /* Darker shade for active */
   --primary-foreground: #ffffff;
 
-  /* Secondary: Lighter sage tint */
-  --secondary: #e8f0e6;
-  --secondary-foreground: #4a5c47;
+  /* Secondary: Very light Teal tint */
+  --secondary: #E3F2F3;
+  --secondary-foreground: #0F828C;
 
-  /* Accent: Deeper sage for emphasis */
-  --accent: #7a9a75;
+  /* Accent: Complementary or Emphasis */
+  --accent: #0F828C;
   --accent-foreground: #ffffff;
 
-  --muted: #6b7280;
-  --border: #d1e0cd;
-  --input: #f0f5ef;
-  --ring: #90AB8B;
+  --muted: #64748b;
+  --border: #CFE3E5;
+  --input: #F0F7F8;
+  --ring: #0F828C;
   --card: #ffffff;
-  --card-hover: #f8faf7;
+  --card-hover: #F8FDFF;
 }
 
 @theme inline {
@@ -50,6 +52,7 @@
   --color-card-hover: var(--card-hover);
 
   --font-sans: var(--font-roboto);
+  --font-heading: var(--font-playfair);
 }
 
 body {
@@ -58,6 +61,16 @@ body {
   font-family: var(--font-sans), sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), serif;
+  font-weight: 700;
 }
 
 /* Custom scrollbar with sage theme */

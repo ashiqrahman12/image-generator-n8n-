@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto } from "next/font/google";
+import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
@@ -9,6 +9,13 @@ const roboto = Roboto({
   display: 'swap',
   variable: '--font-roboto',
 });
+
+const playfair = Playfair_Display({
+  weight: ['700'],
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-playfair'
+})
 
 export const metadata: Metadata = {
   title: "AI Image Generator",
@@ -22,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${roboto.variable} antialiased bg-background text-foreground`}>
+      <body className={`${roboto.variable} ${playfair.variable} antialiased bg-background text-foreground`}>
         <GoogleOAuthProvider clientId="204783801813-ak9hl515i8n91k52kcpak6meadbd9ejk.apps.googleusercontent.com">
           {children}
         </GoogleOAuthProvider>
