@@ -168,7 +168,7 @@ export function ImageGenerator() {
     return (
         <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-4rem)]">
             {/* LEFT PANEL: Controls */}
-            <aside className="w-full lg:w-[380px] xl:w-[420px] p-4 lg:p-6 lg:pb-6 pb-64 border-r border-border bg-white flex flex-col gap-3 lg:gap-6 lg:overflow-y-auto">
+            <aside className="w-full lg:w-[380px] xl:w-[420px] p-5 lg:p-6 pb-[300px] lg:pb-6 border-r border-border bg-white flex flex-col gap-5 lg:gap-6 lg:overflow-y-auto">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -304,7 +304,7 @@ export function ImageGenerator() {
                         <select
                             value={outputFormat}
                             onChange={(e) => setOutputFormat(e.target.value as "png" | "jpg")}
-                            className="w-full appearance-none p-3 pr-10 rounded-xl border-2 border-border bg-input text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                            className="w-full appearance-none p-4 pr-10 rounded-2xl border border-border bg-input text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer shadow-sm text-base font-medium"
                         >
                             {outputFormatOptions.map((opt) => (
                                 <option key={opt.id} value={opt.id}>
@@ -316,17 +316,17 @@ export function ImageGenerator() {
                     </div>
                 </div>
 
-                {/* Mobile Scroll Spacer - Aggressive to ensure visibility */}
-                <div className="h-48 lg:hidden" />
+                {/* Mobile Scroll Spacer - Extra Large for Safety */}
+                <div className="h-24 lg:hidden" />
 
-                {/* Generate Button */}
-                <div className="fixed bottom-24 left-4 right-4 lg:static z-50 transition-all lg:p-0">
+                {/* Generate Button - Mobile Sticky */}
+                <div className="fixed bottom-[90px] left-4 right-4 lg:static z-50 transition-all lg:p-0">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "w-full h-14 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-xl shadow-primary/20",
-                            "bg-primary hover:bg-primary-dark",
+                            "w-full h-14 rounded-full font-bold text-white transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-xl shadow-primary/25 lg:rounded-2xl",
+                            "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
                             "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                         )}
                     >
@@ -387,11 +387,36 @@ export function ImageGenerator() {
                                 <img
                                     src={generatedImage}
                                     alt="Generated Artwork"
-                                    className="w-full h-auto rounded-2xl object-cover max-h-[70vh]"
+                                    className="w-full h-auto rounded-3xl object-cover max-h-[70vh] shadow-sm"
                                 />
                             </div>
-                            {/* Actions */}
-                            <div className="absolute bottom-8 right-8 flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+
+                            {/* Mobile Native Download Button */}
+                            <div className="mt-6 flex flex-col gap-3 lg:hidden">
+                                <button
+                                    onClick={() => {
+                                        if (generatedImage) {
+                                            const link = document.createElement('a');
+                                            link.href = generatedImage;
+                                            link.download = `ai-generated-${Date.now()}.png`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }
+                                    }}
+                                    className="w-full py-4 bg-foreground text-background rounded-2xl font-bold text-lg shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-5 h-5" />
+                                    Download Image
+                                </button>
+                                <button className="w-full py-4 bg-white text-foreground border border-border rounded-2xl font-bold text-lg shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2">
+                                    <Share2 className="w-5 h-5" />
+                                    Share
+                                </button>
+                            </div>
+
+                            {/* Desktop Actions Overlay */}
+                            <div className="hidden lg:flex absolute bottom-8 right-8 gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
                                 <button
                                     onClick={() => {
                                         if (generatedImage) {
