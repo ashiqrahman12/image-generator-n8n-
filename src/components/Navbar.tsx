@@ -47,7 +47,7 @@ export function Navbar() {
                     </div>
                     <span className="text-[10px] font-medium font-bold mt-6">Generate</span>
                 </Link>
-                <Link href="#" className="flex flex-col items-center gap-1 p-2 hover:text-primary transition-colors">
+                <Link href="/library" className="flex flex-col items-center gap-1 p-2 hover:text-primary transition-colors">
                     <Library className="w-5 h-5" />
                     <span className="text-[10px] font-medium">Library</span>
                 </Link>

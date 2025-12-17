@@ -149,6 +149,23 @@ export function ImageGenerator() {
             const data = await response.json();
             if (data.imageUrl) {
                 setGeneratedImage(data.imageUrl);
+
+                // Save to LocalStorage History
+                try {
+                    const newItem = {
+                        id: Date.now().toString(),
+                        image: data.imageUrl,
+                        prompt: prompt,
+                        timestamp: Date.now()
+                    };
+                    const stored = localStorage.getItem("imageHistory");
+                    const history = stored ? JSON.parse(stored) : [];
+                    // Keep only last 3 images to avoid QuotaExceededError
+                    const updatedHistory = [newItem, ...history].slice(0, 3);
+                    localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
+                } catch (e) {
+                    console.error("Failed to save to history", e);
+                }
             } else {
                 setError("No image data received");
             }
