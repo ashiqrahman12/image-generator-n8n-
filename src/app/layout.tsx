@@ -1,10 +1,7 @@
-```
 import type { Metadata } from "next";
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-
-import { ThemeProvider } from "@/components/theme-provider";
 
 const roboto = Roboto({
   weight: ['400', '500', '700'],
@@ -32,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${ roboto.variable } ${ playfair.variable } antialiased bg - background text - foreground`}>
+      <body className={`${roboto.variable} ${playfair.variable} antialiased bg-background text-foreground`}>
         <GoogleOAuthProvider clientId="204783801813-ak9hl515i8n91k52kcpak6meadbd9ejk.apps.googleusercontent.com">
           {children}
         </GoogleOAuthProvider>
@@ -40,5 +37,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-```
