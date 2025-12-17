@@ -310,7 +310,7 @@ export function ImageGenerator() {
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "w-full py-4 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2.5",
+                            "w-full h-14 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2.5 active:scale-95",
                             "bg-primary shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:bg-primary-dark",
                             "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                         )}
