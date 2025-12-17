@@ -316,8 +316,8 @@ export function ImageGenerator() {
                     </div>
                 </div>
 
-                {/* Mobile Scroll Spacer */}
-                <div className="h-32 lg:hidden" />
+                {/* Mobile Scroll Spacer - Aggressive to ensure visibility */}
+                <div className="h-48 lg:hidden" />
 
                 {/* Generate Button */}
                 <div className="fixed bottom-24 left-4 right-4 lg:static z-50 transition-all lg:p-0">
@@ -346,7 +346,7 @@ export function ImageGenerator() {
             </aside>
 
             {/* RIGHT PANEL: Preview */}
-            <main ref={previewRef} className="flex-1 bg-secondary/30 p-6 lg:p-10 flex items-center justify-center relative overflow-hidden">
+            <main ref={previewRef} className="flex-1 bg-secondary/30 p-6 lg:p-10 pb-40 lg:pb-10 flex items-center justify-center relative overflow-hidden min-h-[50vh]">
                 {/* Subtle dot pattern */}
                 <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }} />
 
