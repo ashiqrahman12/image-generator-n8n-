@@ -1,3 +1,4 @@
+```
 import type { Metadata } from "next";
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
@@ -31,18 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${roboto.variable} ${playfair.variable} antialiased bg-background text-foreground`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <GoogleOAuthProvider clientId="204783801813-ak9hl515i8n91k52kcpak6meadbd9ejk.apps.googleusercontent.com">
-            {children}
-          </GoogleOAuthProvider>
-        </ThemeProvider>
+      <body className={`${ roboto.variable } ${ playfair.variable } antialiased bg - background text - foreground`}>
+        <GoogleOAuthProvider clientId="204783801813-ak9hl515i8n91k52kcpak6meadbd9ejk.apps.googleusercontent.com">
+          {children}
+        </GoogleOAuthProvider>
       </body>
     </html>
   );
 }
+
+```
