@@ -221,7 +221,7 @@ export function ImageGenerator() {
                                 {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                             </button>
                         </div>
-                        <GlowingBorder containerClassName="rotate-180">
+                        <GlowingBorder>
                             <textarea
                                 value={prompt}
                                 onChange={(e) => setPrompt(e.target.value)}
