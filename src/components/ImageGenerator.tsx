@@ -10,6 +10,18 @@ function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
 
+const SkeletonLoader = () => (
+    <div className="w-full h-full relative overflow-hidden bg-secondary/30 rounded-3xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+        <div className="absolute inset-0 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3 opacity-20">
+                <Sparkles className="w-12 h-12" />
+                <p className="font-medium text-sm">Dreaming...</p>
+            </div>
+        </div>
+    </div>
+);
+
 const qualityOptions = [
     { id: "1k", label: "1K", icon: Monitor, desc: "1024px" },
     { id: "2k", label: "2K", icon: Monitor, desc: "2048px" },
@@ -305,20 +317,20 @@ export function ImageGenerator() {
                 </div>
 
                 {/* Generate Button */}
-                <div className="fixed bottom-16 left-0 right-0 lg:static z-50 bg-white/80 backdrop-blur-md p-4 border-t border-border lg:p-0 lg:bg-transparent lg:border-0 lg:shadow-none transition-all">
+                <div className="fixed bottom-24 left-4 right-4 lg:static z-50 transition-all lg:p-0">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "w-full h-14 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2.5 active:scale-95",
-                            "bg-primary shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:bg-primary-dark",
+                            "w-full h-14 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2.5 active:scale-95 shadow-xl shadow-primary/20",
+                            "bg-primary hover:bg-primary-dark",
                             "disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                         )}
                     >
                         {loading ? (
                             <>
                                 <Loader2 className="w-5 h-5 animate-spin" />
-                                <span>Creating...</span>
+                                <span>Generating...</span>
                             </>
                         ) : (
                             <>
@@ -356,15 +368,9 @@ export function ImageGenerator() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0 }}
-                            className="relative"
+                            className="relative w-full max-w-3xl aspect-square lg:aspect-auto lg:h-[70vh]"
                         >
-                            <div className="w-72 h-72 lg:w-96 lg:h-96 rounded-3xl bg-white shadow-2xl shadow-primary/20 flex items-center justify-center overflow-hidden border border-border">
-                                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-secondary to-primary/5 animate-pulse" />
-                                <div className="relative z-10 flex flex-col items-center gap-4">
-                                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                                    <p className="text-sm text-muted font-medium">Generating your image...</p>
-                                </div>
-                            </div>
+                            <SkeletonLoader />
                         </motion.div>
                     )}
 

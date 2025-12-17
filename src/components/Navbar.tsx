@@ -35,20 +35,20 @@ export function Navbar() {
                 </div>
             </div>
 
-            {/* Mobile Bottom Tab Bar */}
-            <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-t border-border flex items-center justify-around z-[60]">
-                <Link href="/" className="flex flex-col items-center gap-1 p-2 text-muted hover:text-primary transition-colors">
-                    <Home className="w-6 h-6" />
+            {/* Mobile Bottom Tab Bar - Floating Style */}
+            <div className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl flex items-center justify-around z-[60] text-muted-foreground ring-1 ring-black/5">
+                <Link href="/" className="flex flex-col items-center gap-1 p-2 hover:text-primary transition-colors">
+                    <Home className="w-5 h-5" />
                     <span className="text-[10px] font-medium">Home</span>
                 </Link>
-                <Link href="/" className="flex flex-col items-center gap-1 p-2 text-primary">
-                    <div className="w-10 h-10 -mt-8 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/30 border-4 border-white">
-                        <Sparkles className="w-5 h-5 text-white" />
+                <Link href="/" className="flex flex-col items-center gap-1 p-2 text-primary relative group">
+                    <div className="absolute -top-10 bg-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-primary/30 ring-4 ring-white transition-transform group-active:scale-95">
+                        <Sparkles className="w-6 h-6 text-white" />
                     </div>
-                    <span className="text-[10px] font-medium font-bold">Generate</span>
+                    <span className="text-[10px] font-medium font-bold mt-6">Generate</span>
                 </Link>
-                <Link href="#" className="flex flex-col items-center gap-1 p-2 text-muted hover:text-primary transition-colors">
-                    <Library className="w-6 h-6" />
+                <Link href="#" className="flex flex-col items-center gap-1 p-2 hover:text-primary transition-colors">
+                    <Library className="w-5 h-5" />
                     <span className="text-[10px] font-medium">Library</span>
                 </Link>
             </div>
