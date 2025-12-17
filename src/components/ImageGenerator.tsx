@@ -3,14 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { Progress } from "@/components/ui/progress";
-
-// --- Utility Utils (Shadcn-like) ---
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
+import { cn } from "@/lib/utils";
 
 // --- Components (Shadcn-like Primitives) ---
 const SkeletonLoader = () => (

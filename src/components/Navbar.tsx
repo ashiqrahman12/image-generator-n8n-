@@ -13,7 +13,7 @@ interface GoogleUser {
     access_token?: string;
 }
 
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeTogglerButton } from "@/components/animate-ui/components/buttons/theme-toggler";
 
 export function Navbar() {
     const [user, setUser] = useState<GoogleUser | null>(null);
@@ -75,7 +75,7 @@ export function Navbar() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
-                    <ThemeToggle />
+                    <ThemeTogglerButton />
                     {user ? (
                         <div className="flex items-center gap-3">
                             <div className="hidden sm:block text-right">
