@@ -54,7 +54,9 @@ export function ImageGenerator() {
     const previewRef = useRef<HTMLElement>(null);
 
     const MAX_IMAGES = 7;
-    const MAX_SIZE_MB = 30;
+    // Vercel Serverless Function limit is 4.5MB for the Request Body. 
+    // Setting safety limit to 4MB to prevent 413 Payload Too Large errors.
+    const MAX_SIZE_MB = 4;
 
     // Voice Input Handler using Web Speech API
     const handleVoiceInput = () => {
@@ -150,9 +152,9 @@ export function ImageGenerator() {
             } else {
                 setError("No image data received");
             }
-        } catch (err) {
-            console.error(err);
-            setError("An error occurred. Please try again.");
+        } catch (err: any) {
+            console.error("Generation error:", err);
+            setError(err.message || "An error occurred. Please try again.");
         } finally {
             setLoading(false);
         }
