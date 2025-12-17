@@ -15,8 +15,8 @@ export function Navbar() {
 
                 {/* Nav Links - Desktop */}
                 <div className="hidden md:flex items-center gap-8">
-                    <Link href="#" className="text-sm font-medium text-muted hover:text-primary transition-colors">
-                        Gallery
+                    <Link href="/library" className="text-sm font-medium text-muted hover:text-primary transition-colors">
+                        Image Gallery
                     </Link>
                     <Link href="#" className="text-sm font-medium text-muted hover:text-primary transition-colors">
                         Pricing
