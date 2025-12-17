@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff } from "lucide-react";
+import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -13,8 +13,8 @@ function cn(...inputs: ClassValue[]) {
 
 // --- Components (Shadcn-like Primitives) ---
 const SkeletonLoader = () => (
-    <div className="w-full h-full relative overflow-hidden bg-secondary/20 rounded-3xl border border-white/50">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+    <div className="w-full h-full relative overflow-hidden bg-secondary/20 rounded-3xl border border-white/50 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
         <div className="absolute inset-0 flex items-center justify-center">
             <div className="flex flex-col items-center gap-3 opacity-30">
                 <Sparkles className="w-12 h-12 text-primary" />
@@ -30,7 +30,7 @@ const Label = ({ children, className }: { children: React.ReactNode; className?:
     </label>
 );
 
-const InputStyles = "flex h-12 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm";
+const InputStyles = "flex h-12 w-full rounded-xl border border-input bg-background/50 backdrop-blur-sm px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm focus:bg-background";
 
 // --- Options Data ---
 const qualityOptions = [
@@ -53,7 +53,9 @@ const outputFormatOptions = [
 export function ImageGenerator() {
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
-    const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+    // Updated state to hold array of images
+    const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+    const [selectedImage, setSelectedImage] = useState<string | null>(null); // For lightbox
     const [error, setError] = useState<string | null>(null);
     const [quality, setQuality] = useState<"1k" | "2k" | "4k">("2k");
     const [aspectRatio, setAspectRatio] = useState<"1:1" | "9:16" | "16:9">("1:1");
@@ -117,7 +119,9 @@ export function ImageGenerator() {
         if (!prompt.trim()) return;
         setLoading(true);
         setError(null);
-        setGeneratedImage(null);
+        setGeneratedImages([]); // Clear previous results
+        setSelectedImage(null);
+
         try {
             const formData = new FormData();
             formData.append("prompt", prompt);
@@ -131,16 +135,25 @@ export function ImageGenerator() {
             if (!response.ok) throw new Error("Failed to generate image");
             const data = await response.json();
 
-            if (data.imageUrl) {
-                setGeneratedImage(data.imageUrl);
-                // History Logic
+            console.log("API Response:", data); // Debug log
+
+            if (data.imageUrls && data.imageUrls.length > 0) {
+                setGeneratedImages(data.imageUrls);
+
+                // History Logic (Save all generated, max 3 in storage)
                 try {
-                    const newItem = { id: Date.now().toString(), image: data.imageUrl, prompt: prompt, timestamp: Date.now() };
+                    const newItems = data.imageUrls.map((url: string) => ({
+                        id: Date.now().toString() + Math.random().toString(),
+                        image: url,
+                        prompt: prompt,
+                        timestamp: Date.now()
+                    }));
+
                     const stored = localStorage.getItem("imageHistory");
                     const history = stored ? JSON.parse(stored) : [];
-                    localStorage.setItem("imageHistory", JSON.stringify([newItem, ...history].slice(0, 3)));
+                    localStorage.setItem("imageHistory", JSON.stringify([...newItems, ...history].slice(0, 5))); // Increased history slightly
                 } catch (e) { console.error("Failed to save history", e); }
-            } else { setError("No image data received"); }
+            } else { setError("No image data received from API"); }
         } catch (err: any) {
             console.error("Generation error:", err);
             setError(err.message || "An error occurred.");
@@ -148,25 +161,31 @@ export function ImageGenerator() {
     };
 
     useEffect(() => {
-        if ((loading || generatedImage) && window.innerWidth < 1024) {
-            // On mobile, slight delay to allow rendering then scroll
+        if ((loading || generatedImages.length > 0) && window.innerWidth < 1024) {
             setTimeout(() => {
                 previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
             }, 100);
         }
-    }, [loading, generatedImage]);
+    }, [loading, generatedImages]);
+
+    // Format grid based on image count
+    const getGridClass = (count: number) => {
+        if (count === 1) return "grid-cols-1";
+        if (count === 2) return "grid-cols-1 md:grid-cols-2";
+        return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"; // Masonry-ish feel
+    };
 
     return (
         <div className="flex flex-col lg:flex-row h-[calc(100dvh-4rem)] bg-background">
             {/* LEFT PANEL: Controls (Scrollable) */}
             <aside
                 ref={scrollContainerRef}
-                className="w-full lg:w-[420px] flex flex-col bg-background/50 border-r border-border overflow-y-auto overflow-x-hidden scroll-smooth"
+                className="w-full lg:w-[420px] flex flex-col bg-white/50 backdrop-blur-xl border-r border-white/20 overflow-y-auto overflow-x-hidden scroll-smooth shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] z-20"
             >
                 <div className="p-5 lg:p-6 pb-40 space-y-6">
                     {/* Header */}
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary/20 to-primary/5 flex items-center justify-center border border-primary/10">
                             <Sparkles className="w-5 h-5 text-primary" />
                         </div>
                         <div>
@@ -182,7 +201,7 @@ export function ImageGenerator() {
                             <button
                                 type="button"
                                 onClick={handleVoiceInput}
-                                className={cn("p-1.5 rounded-md transition-all", isListening ? "bg-red-100 text-red-500 animate-pulse" : "bg-secondary text-primary hover:bg-secondary/80")}
+                                className={cn("p-1.5 rounded-md transition-all", isListening ? "bg-red-100 text-red-500 animate-pulse" : "bg-secondary/50 text-foreground hover:bg-secondary")}
                             >
                                 {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                             </button>
@@ -191,7 +210,7 @@ export function ImageGenerator() {
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             placeholder="A futuristic city in the clouds..."
-                            className={cn(InputStyles, "h-28 pt-3 resize-none")}
+                            className={cn(InputStyles, "h-28 pt-3 resize-none bg-white/40")}
                         />
                     </div>
 
@@ -204,7 +223,7 @@ export function ImageGenerator() {
                         <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
                         <div className="grid grid-cols-3 gap-2">
                             {refImages.map((img, index) => (
-                                <div key={index} className="relative group rounded-xl overflow-hidden border border-border aspect-square">
+                                <div key={index} className="relative group rounded-xl overflow-hidden border border-white/40 aspect-square shadow-sm">
                                     <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
                                     <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-white/90 rounded-full shadow-sm">
                                         <X className="w-3 h-3" />
@@ -212,7 +231,7 @@ export function ImageGenerator() {
                                 </div>
                             ))}
                             {refImages.length < MAX_IMAGES && (
-                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-border rounded-xl flex items-center justify-center text-muted hover:border-primary hover:bg-primary/5 transition-all">
+                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square border-2 border-dashed border-border/60 rounded-xl flex items-center justify-center text-muted hover:border-primary hover:bg-primary/5 transition-all bg-white/20">
                                     <Upload className="w-5 h-5" />
                                 </button>
                             )}
@@ -229,8 +248,8 @@ export function ImageGenerator() {
                                         key={opt.id}
                                         onClick={() => setQuality(opt.id)}
                                         className={cn(
-                                            "p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 text-center",
-                                            quality === opt.id ? "border-primary bg-primary/10 text-primary ring-1 ring-primary" : "border-border hover:border-primary/50 text-muted"
+                                            "p-2.5 rounded-xl border transition-all flex flex-col items-center gap-1 text-center bg-white/30 backdrop-blur-sm",
+                                            quality === opt.id ? "border-primary bg-primary/10 text-primary ring-1 ring-primary" : "border-border/60 hover:border-primary/50 text-muted"
                                         )}
                                     >
                                         <opt.icon className="w-4 h-4" />
@@ -247,7 +266,7 @@ export function ImageGenerator() {
                                     <select
                                         value={aspectRatio}
                                         onChange={(e) => setAspectRatio(e.target.value as any)}
-                                        className={cn(InputStyles, "appearance-none pr-8")}
+                                        className={cn(InputStyles, "appearance-none pr-8 bg-white/40")}
                                     >
                                         {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                                     </select>
@@ -260,7 +279,7 @@ export function ImageGenerator() {
                                     <select
                                         value={outputFormat}
                                         onChange={(e) => setOutputFormat(e.target.value as any)}
-                                        className={cn(InputStyles, "appearance-none pr-8")}
+                                        className={cn(InputStyles, "appearance-none pr-8 bg-white/40")}
                                     >
                                         {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
                                     </select>
@@ -272,14 +291,14 @@ export function ImageGenerator() {
                 </div>
             </aside>
 
-            {/* Sticky Action Footer (Mobile Only) */}
-            <div className="lg:hidden fixed bottom-[4.5rem] left-0 right-0 p-4 bg-white/95 backdrop-blur-xl border-t border-border z-40 pb-4">
+            {/* Sticky Action Footer (Mobile Only - Glassmorphism) */}
+            <div className="lg:hidden fixed bottom-[4.5rem] left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-white/20 z-40 pb-4 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
                 <button
                     onClick={handleGenerate}
                     disabled={loading || !prompt.trim()}
                     className={cn(
-                        "w-full h-12 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/25 active:scale-95",
-                        "bg-primary hover:bg-primary-dark",
+                        "w-full h-12 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/30 active:scale-95",
+                        "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
                         "disabled:opacity-50 disabled:cursor-not-allowed"
                     )}
                 >
@@ -288,63 +307,88 @@ export function ImageGenerator() {
                 </button>
             </div>
 
-            {/* RIGHT PANEL: Preview */}
-            <main ref={previewRef} className="flex-1 bg-secondary/30 relative flex flex-col items-center p-4 lg:p-10 overflow-y-auto">
-                {/* Dot Pattern */}
-                <div className="absolute inset-0 opacity-40 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+            {/* RIGHT PANEL: Preview (Masonry Layout) */}
+            <main ref={previewRef} className="flex-1 bg-secondary/10 relative flex flex-col items-center p-4 lg:p-10 overflow-y-auto">
+                {/* Premium Glass/Noise Pattern */}
+                <div className="absolute inset-0 opacity-20 pointer-events-none noise-bg mix-blend-overlay" />
+                <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
-                <div className="w-full max-w-3xl flex-1 flex flex-col justify-center min-h-[500px] lg:min-h-0 pb-32 lg:pb-0">
+                <div className="w-full max-w-5xl flex-1 flex flex-col min-h-[500px] lg:min-h-0 pb-32 lg:pb-0 justify-center">
                     <AnimatePresence mode="wait">
-                        {!generatedImage && !loading && !error && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center">
-                                <div className="w-24 h-24 bg-white rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg shadow-primary/5 border border-white/50">
-                                    <ImageIcon className="w-10 h-10 text-primary/30" />
+                        {generatedImages.length === 0 && !loading && !error && (
+                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-center self-center my-auto">
+                                <div className="w-24 h-24 bg-white rounded-[2rem] mx-auto mb-6 flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
+                                    <ImageIcon className="w-10 h-10 text-primary/40" />
                                 </div>
-                                <h3 className="text-lg font-bold text-foreground">Canvas Ready</h3>
-                                <p className="text-sm text-muted">Your imagination is the limit.</p>
+                                <h3 className="text-xl font-bold text-foreground mb-2 tracking-tight">Canvas Ready</h3>
+                                <p className="text-sm text-muted">Awaiting your creative input.</p>
                             </motion.div>
                         )}
+
                         {loading && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full aspect-square lg:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl shadow-primary/10">
-                                <SkeletonLoader />
-                            </motion.div>
-                        )}
-                        {generatedImage && (
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative group w-full">
-                                <div className="rounded-3xl overflow-hidden shadow-2xl shadow-primary/20 bg-white p-2 border border-white/50">
-                                    <img src={generatedImage} alt="Generated" className="w-full h-auto rounded-2xl" />
-                                </div>
-                                {/* Mobile Actions */}
-                                <div className="flex gap-3 mt-4 lg:hidden">
-                                    <a href={generatedImage} download={`ai-gen-${Date.now()}.png`} className="flex-1 h-12 bg-foreground text-background rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-transform">
-                                        <Download className="w-4 h-4" /> Save
-                                    </a>
-                                    <button className="h-12 w-12 bg-white text-foreground border border-border rounded-xl flex items-center justify-center shadow-sm active:scale-95 transition-transform">
-                                        <Share2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                                {/* Desktop Actions */}
-                                <div className="hidden lg:flex absolute bottom-6 right-6 gap-2 opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                                    <a href={generatedImage} download className="p-3 bg-white text-foreground rounded-xl shadow-lg hover:scale-105 transition-all"><Download className="w-5 h-5" /></a>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex items-center justify-center">
+                                <div className="w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl">
+                                    <SkeletonLoader />
                                 </div>
                             </motion.div>
                         )}
+
+                        {generatedImages.length > 0 && (
+                            <motion.div
+                                className={cn("grid gap-6 w-full auto-rows-min", getGridClass(generatedImages.length))}
+                                initial="hidden"
+                                animate="visible"
+                                variants={{
+                                    hidden: { opacity: 0 },
+                                    visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+                                }}
+                            >
+                                {generatedImages.map((imgUrl, index) => (
+                                    <motion.div
+                                        key={index}
+                                        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                                        className="relative group rounded-3xl overflow-hidden shadow-2xl shadow-primary/10 bg-white/40 backdrop-blur-md border border-white/60 p-2 transition-all hover:scale-[1.02] hover:shadow-primary/20 aspect-square"
+                                    >
+                                        <div className="w-full h-full relative rounded-2xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(imgUrl)}>
+                                            <img src={imgUrl} alt={`Generated ${index}`} className="w-full h-full object-cover" />
+                                            {/* Hover Overlay */}
+                                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                                                <a
+                                                    href={imgUrl}
+                                                    download={`ai-gen-${Date.now()}-${index}.png`}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="p-3 bg-white/90 text-foreground rounded-full shadow-lg hover:scale-110 transition-transform"
+                                                >
+                                                    <Download className="w-5 h-5" />
+                                                </a>
+                                                <button onClick={(e) => { e.stopPropagation(); setSelectedImage(imgUrl); }} className="p-3 bg-white/90 text-foreground rounded-full shadow-lg hover:scale-110 transition-transform">
+                                                    <Maximize2 className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        )}
+
                         {error && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-red-50 text-red-600 px-6 py-4 rounded-xl border border-red-100 text-center">
-                                {error}
+                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-50/80 backdrop-blur-md text-red-600 px-8 py-6 rounded-3xl border border-red-100 shadow-xl text-center self-center mx-auto">
+                                <div className="p-3 bg-red-100 rounded-full w-fit mx-auto mb-3"><X className="w-6 h-6 text-red-500" /></div>
+                                <h4 className="font-bold mb-1">Generation Failed</h4>
+                                <p className="text-sm opacity-90">{error}</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
 
-                {/* Desktop Generate Button (Visible only on Large screens) */}
-                <div className="hidden lg:block absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
+                {/* Desktop Generate Button */}
+                <div className="hidden lg:block absolute bottom-8 left-1/2 -translate-x-1/2 z-30">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "h-14 px-8 rounded-2xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 active:scale-95",
-                            "bg-primary hover:bg-primary-dark",
+                            "h-14 px-8 rounded-full font-bold text-white transition-all flex items-center justify-center gap-2 shadow-2xl shadow-primary/30 hover:shadow-primary/40 active:scale-95 border-4 border-white/20",
+                            "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
                             "disabled:opacity-50 disabled:cursor-not-allowed"
                         )}
                     >
@@ -353,6 +397,27 @@ export function ImageGenerator() {
                     </button>
                 </div>
             </main>
+
+            {/* Lightbox / Fullscreen View */}
+            <AnimatePresence>
+                {selectedImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 lg:p-10"
+                        onClick={() => setSelectedImage(null)}
+                    >
+                        <motion.img
+                            initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
+                            src={selectedImage}
+                            className="max-h-full max-w-full rounded-2xl shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <button className="absolute top-6 right-6 p-2 bg-white/10 text-white rounded-full hover:bg-white/20" onClick={() => setSelectedImage(null)}>
+                            <X className="w-6 h-6" />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
