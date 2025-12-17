@@ -16,7 +16,38 @@ interface GoogleUser {
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Navbar() {
-    // ... existing state assignments ...
+    const [user, setUser] = useState<GoogleUser | null>(null);
+
+    // Check for persisted session on mount
+    useEffect(() => {
+        const storedUser = localStorage.getItem("googleUser");
+        if (storedUser) {
+            setUser(JSON.parse(storedUser));
+        }
+    }, []);
+
+    const login = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                });
+                const userInfo = await res.json();
+                const newUserData = { ...userInfo, access_token: tokenResponse.access_token };
+                setUser(newUserData);
+                localStorage.setItem("googleUser", JSON.stringify(newUserData));
+            } catch (error) {
+                console.error("Failed to fetch user info", error);
+            }
+        },
+        onError: () => console.log('Login Failed'),
+    });
+
+    const handleLogout = () => {
+        googleLogout();
+        setUser(null);
+        localStorage.removeItem("googleUser");
+    };
 
     return (
         <nav className="h-16 border-b border-border bg-white dark:bg-gray-900 sticky top-0 z-50 transition-colors">

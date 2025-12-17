@@ -8,7 +8,7 @@ import { twMerge } from "tailwind-merge";
 import { Progress } from "@/components/ui/progress";
 
 // --- Utility Utils (Shadcn-like) ---
-function cn(...inputs: ClassValue[]) {
+export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
 }
 
