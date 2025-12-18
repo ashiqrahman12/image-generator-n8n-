@@ -205,48 +205,47 @@ export function ImageGenerator() {
                     </div>
 
                     {/* Prompt Input Section */}
-                    <div className="space-y-3">
-                        <div className="relative group">
-                            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-primary/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-500"></div>
-                            <div className="relative bg-[#0A0A0A] rounded-2xl border border-white/10 p-4">
+                    <div className="space-y-4">
+                        <Label className="text-lg text-white font-extrabold flex items-center gap-2">
+                            <Sparkles className="w-5 h-5 text-primary" /> Describe Your Vision
+                        </Label>
+                        <GlowingBorder containerClassName="rounded-2xl">
+                            <div className="relative bg-[#0A0A0A] p-4 rounded-2xl">
                                 <textarea
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="A majestic dragon soaring through a sunset sky..."
-                                    className="w-full h-32 bg-transparent border-none focus:ring-0 text-white placeholder:text-muted-foreground/50 resize-none text-base leading-relaxed"
+                                    className="w-full h-32 bg-transparent border-none focus:ring-0 text-white placeholder:text-white/30 resize-none text-lg font-bold leading-relaxed"
                                 />
-                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
-                                    <span className="text-xs text-muted-foreground">{prompt.length} characters</span>
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
+                                    <span className="text-sm font-bold text-white/40">{prompt.length} characters</span>
                                     <button
                                         type="button"
                                         onClick={handleVoiceInput}
-                                        className={cn("flex items-center gap-1.5 text-xs font-semibold transition-colors", isListening ? "text-red-500 animate-pulse" : "text-purple-400 hover:text-purple-300")}
+                                        className={cn("flex items-center gap-2 text-sm font-black transition-all", isListening ? "text-red-500 animate-pulse" : "text-primary hover:text-primary-light")}
                                     >
-                                        {isListening ? <MicOff className="w-3.5 h-3.5" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                        {isListening ? <MicOff className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
                                         {isListening ? "Stop Listening" : "Enhance Prompt"}
                                     </button>
                                 </div>
                             </div>
-                        </div>
+                        </GlowingBorder>
                     </div>
 
                     {/* Reference Images - Drag & Drop Style */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <Label className="text-base text-white font-semibold flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4 text-primary" />
-                                Reference Images
-                            </Label>
-                            <span className="text-xs text-muted-foreground">(Optional - Max 4)</span>
-                        </div>
+                    <div className="space-y-4">
+                        <Label className="text-lg text-white font-extrabold flex items-center gap-2">
+                            <ImageIcon className="w-5 h-5 text-primary" />
+                            Reference Images <span className="text-xs font-bold text-white/30 ml-auto">(Max 4)</span>
+                        </Label>
 
-                        <div className="grid grid-cols-1 gap-3">
+                        <div className="grid grid-cols-1 gap-4">
                             <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
 
                             {refImages.length > 0 && (
                                 <div className="grid grid-cols-4 gap-2 mb-2">
                                     {refImages.map((img, index) => (
-                                        <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-white/10 group">
+                                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group">
                                             <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
                                             <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100">
                                                 <X className="w-3 h-3" />
@@ -257,75 +256,85 @@ export function ImageGenerator() {
                             )}
 
                             {refImages.length < MAX_IMAGES && (
-                                <motion.button
-                                    whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
-                                    whileTap={{ scale: 0.98 }}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="border-2 border-dashed border-white/10 rounded-2xl h-32 w-full flex flex-col items-center justify-center gap-3 text-muted-foreground hover:border-primary/50 hover:text-primary transition-all group"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                                        <Upload className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-center">
-                                        <p className="text-sm font-medium">Drag & drop or browse</p>
-                                        <p className="text-xs opacity-50 mt-1">JPG, PNG supported</p>
-                                    </div>
-                                </motion.button>
+                                <GlowingBorder containerClassName="rounded-2xl">
+                                    <motion.button
+                                        whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="rounded-2xl h-36 w-full flex flex-col items-center justify-center gap-3 text-white bg-black hover:text-primary transition-all group"
+                                    >
+                                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                            <Upload className="w-6 h-6" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-base font-black">Drag & drop or browse</p>
+                                            <p className="text-xs font-bold opacity-40 mt-1">JPG, PNG supported</p>
+                                        </div>
+                                    </motion.button>
+                                </GlowingBorder>
                             )}
                         </div>
                     </div>
 
                     {/* Advanced Settings Accordion */}
-                    <SimpleAccordion.AccordionItem title="Advanced Settings" className="border-t border-white/10 pt-2">
-                        <div className="space-y-6 pt-2">
+                    <SimpleAccordion.AccordionItem
+                        title="Advanced Settings"
+                        className="border-t border-white/10 pt-4"
+                    >
+                        <div className="space-y-6 pt-4">
                             {/* Quality */}
-                            <div className="space-y-3">
-                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Quality</Label>
-                                <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-4">
+                                <Label className="text-xs uppercase font-black tracking-widest text-primary/70">Generation Quality</Label>
+                                <div className="grid grid-cols-3 gap-3">
                                     {qualityOptions.map((opt) => (
-                                        <button
-                                            key={opt.id}
-                                            onClick={() => setQuality(opt.id)}
-                                            className={cn(
-                                                "px-3 py-2 rounded-lg text-sm font-medium transition-all border",
-                                                quality === opt.id
-                                                    ? "bg-primary/20 border-primary text-primary shadow-[0_0_15px_-3px_rgba(255,107,0,0.3)]"
-                                                    : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10"
-                                            )}
-                                        >
-                                            {opt.label}
-                                        </button>
+                                        <GlowingBorder key={opt.id} containerClassName={cn("rounded-xl", quality !== opt.id && "bg-transparent")}>
+                                            <button
+                                                onClick={() => setQuality(opt.id)}
+                                                className={cn(
+                                                    "w-full px-3 py-3 rounded-xl text-xs font-black transition-all border-none relative overflow-hidden",
+                                                    quality === opt.id
+                                                        ? "bg-primary text-white"
+                                                        : "bg-white/5 text-white/50 hover:bg-white/10"
+                                                )}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        </GlowingBorder>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Aspect Ratio & Format */}
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Aspect Ratio</Label>
-                                    <div className="relative">
-                                        <select
-                                            value={aspectRatio}
-                                            onChange={(e) => setAspectRatio(e.target.value as any)}
-                                            className="w-full h-10 pl-3 pr-8 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-                                        >
-                                            {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black">{opt.label}</option>)}
-                                        </select>
-                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                    </div>
+                                <div className="space-y-3">
+                                    <Label className="text-xs uppercase font-black tracking-widest text-primary/70">Aspect Ratio</Label>
+                                    <GlowingBorder containerClassName="rounded-xl">
+                                        <div className="relative">
+                                            <select
+                                                value={aspectRatio}
+                                                onChange={(e) => setAspectRatio(e.target.value as any)}
+                                                className="w-full h-12 pl-4 pr-10 bg-black border-none rounded-xl text-sm font-bold text-white focus:outline-none appearance-none cursor-pointer"
+                                            >
+                                                {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black text-white">{opt.label}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
+                                        </div>
+                                    </GlowingBorder>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">Format</Label>
-                                    <div className="relative">
-                                        <select
-                                            value={outputFormat}
-                                            onChange={(e) => setOutputFormat(e.target.value as any)}
-                                            className="w-full h-10 pl-3 pr-8 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-primary/50 appearance-none cursor-pointer"
-                                        >
-                                            {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black">{opt.label}</option>)}
-                                        </select>
-                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                                    </div>
+                                <div className="space-y-3">
+                                    <Label className="text-xs uppercase font-black tracking-widest text-primary/70">Output Format</Label>
+                                    <GlowingBorder containerClassName="rounded-xl">
+                                        <div className="relative">
+                                            <select
+                                                value={outputFormat}
+                                                onChange={(e) => setOutputFormat(e.target.value as any)}
+                                                className="w-full h-12 pl-4 pr-10 bg-black border-none rounded-xl text-sm font-bold text-white focus:outline-none appearance-none cursor-pointer"
+                                            >
+                                                {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black text-white">{opt.label}</option>)}
+                                            </select>
+                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
+                                        </div>
+                                    </GlowingBorder>
                                 </div>
                             </div>
                         </div>
@@ -334,21 +343,23 @@ export function ImageGenerator() {
 
                 {/* Generate Button - Fixed at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black to-transparent z-20">
-                    <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleGenerate}
-                        disabled={loading || !prompt.trim()}
-                        className={cn(
-                            "w-full h-14 rounded-2xl font-bold text-lg text-white shadow-xl shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
-                        )}
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-primary to-purple-600 animate-gradient-x" />
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 fill-white" />}
-                            Generate Images
-                        </span>
-                    </motion.button>
+                    <GlowingBorder containerClassName="rounded-2xl">
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleGenerate}
+                            disabled={loading || !prompt.trim()}
+                            className={cn(
+                                "w-full h-16 rounded-2xl font-black text-xl text-white shadow-2xl relative overflow-hidden group border-none"
+                            )}
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-primary to-purple-800 animate-gradient-x" />
+                            <span className="relative z-10 flex items-center justify-center gap-3">
+                                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6 fill-white" />}
+                                Generate Images
+                            </span>
+                        </motion.button>
+                    </GlowingBorder>
                 </div>
             </aside>
 
