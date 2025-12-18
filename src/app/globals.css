@@ -7,37 +7,34 @@
 @plugin "tailwindcss-animate";
 
 :root {
-  /* Yellow/Orange Brand Theme #F5C857 */
-  /* RGB: 245, 200, 87 */
+  /* Dark Orange Brand Theme */
 
   --background: #000000;
   /* Pure Black */
   --foreground: #ffffff;
-  /* White text for maximum contrast on black */
+  /* Pure White */
 
-  /* Primary: #F5C857 (Vibrant Yellow) */
-  --primary: #F5C857;
-  --primary-foreground: #000000;
+  /* Primary: #FF6B00 (Vibrant Dark Orange) */
+  --primary: #FF6B00;
+  --primary-foreground: #ffffff;
 
-  --primary-light: #F7D47C;
-  /* Lighter tint */
-  --primary-dark: #D4A633;
-  /* Darker mustard for active */
+  --primary-light: #FF8533;
+  --primary-dark: #CC5500;
 
-  /* Secondary: Darker gray/black for subtle contrast */
-  --secondary: #111111;
-  --secondary-foreground: #F5C857;
+  /* Secondary: Darker gray for contrast */
+  --secondary: #1A1A1A;
+  --secondary-foreground: #FF6B00;
 
   /* Accent */
-  --accent: #F5C857;
-  --accent-foreground: #000000;
+  --accent: #FF6B00;
+  --accent-foreground: #ffffff;
 
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
+  --muted: #262626;
+  --muted-foreground: #a3a3a3;
 
   --border: #333333;
-  --input: #111111;
-  --ring: #F5C857;
+  --input: #1A1A1A;
+  --ring: #FF6B00;
 
   --card: #000000;
   --card-foreground: #ffffff;
@@ -46,8 +43,7 @@
   --popover: #000000;
   --popover-foreground: #ffffff;
 
-  --radius: 0.75rem;
-  /* Slightly rounder */
+  --radius: 1rem;
 
   /* Fonts */
   --font-sans: var(--font-roboto);
@@ -88,12 +84,11 @@
 
   html {
     font-size: 18px;
-    /* Increased base size */
   }
 
   body {
-    @apply bg-background text-foreground font-sans font-medium;
-    /* Default medium weight */
+    @apply bg-background text-foreground font-sans font-bold;
+    letter-spacing: -0.01em;
   }
 }
 
@@ -109,7 +104,7 @@ h6 {
   letter-spacing: -0.02em;
 }
 
-/* Custom scrollbar with Yellow theme */
+/* Custom scrollbar with Dark Orange theme */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
