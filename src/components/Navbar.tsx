@@ -62,12 +62,11 @@ export function Navbar() {
                 "max-w-7xl mx-auto h-14 px-4 rounded-2xl transition-all duration-300 flex items-center justify-between",
                 scrolled ? "glass shadow-2xl shadow-black/50 border-white/5" : "bg-transparent border-transparent"
             )}>
-                {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 group">
+                <Link href="/" className="flex items-center gap-2 group shrink-0">
                     <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:scale-110 transition-transform">
                         <Sparkles className="h-4 w-4 text-black" />
                     </div>
-                    <span className="font-bold text-base text-white tracking-tight">Antigravity AI</span>
+                    <span className="font-bold text-sm sm:text-base text-white tracking-tight">Antigravity AI</span>
                 </Link>
 
                 {/* Nav Links - Desktop */}
@@ -103,10 +102,10 @@ export function Navbar() {
                     ) : (
                         <button
                             onClick={() => login()}
-                            className="h-10 px-6 bg-white rounded-full text-black text-xs font-semibold uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2.5 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
+                            className="h-10 px-4 sm:px-6 bg-white rounded-full text-black text-[10px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                         >
                             Sign In
-                            <ArrowRight className="w-4 h-4" />
+                            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                         </button>
                     )}
                 </div>

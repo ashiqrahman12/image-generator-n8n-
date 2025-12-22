@@ -121,10 +121,16 @@ export function ImageGenerator() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen bg-background text-foreground overflow-hidden pt-20">
-            {/* Control Sidebar */}
-            <aside className="w-full lg:w-[440px] border-r border-white/5 bg-zinc-950/20 backdrop-blur-2xl flex flex-col overflow-y-auto custom-scrollbar">
-                <div className="p-6 space-y-8 pb-32">
+        <div className="flex flex-col lg:flex-row h-dvh bg-background text-foreground overflow-hidden pt-16 md:pt-20">
+            {/* Control Sidebar (Desktop) / Mobile Shelf Wrapper */}
+            <aside className={cn(
+                "w-full lg:w-[420px] border-t lg:border-t-0 lg:border-r border-white/5 bg-zinc-950/20 backdrop-blur-2xl flex flex-col z-50 transition-all shadow-2xl shadow-black",
+                "fixed bottom-0 left-0 right-0 lg:static lg:h-full max-h-[85dvh] lg:max-h-full rounded-t-[32px] lg:rounded-none"
+            )}>
+                {/* Mobile Handle */}
+                <div className="lg:hidden w-12 h-1.5 bg-white/10 rounded-full mx-auto mt-4 mb-2" />
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 pb-32 lg:pb-40">
                     {/* Prompt Section */}
                     <div className="space-y-3">
                         <SectionLabel icon={Zap}>Prompt</SectionLabel>
@@ -135,7 +141,7 @@ export function ImageGenerator() {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Describe what you want to create..."
-                                    className="w-full h-32 bg-transparent border-none resize-none text-base font-normal text-white placeholder:text-white/40 focus:ring-0 leading-relaxed custom-scrollbar"
+                                    className="w-full h-24 lg:h-32 bg-transparent border-none resize-none text-base font-normal text-white placeholder:text-white/40 focus:ring-0 leading-relaxed custom-scrollbar"
                                 />
                                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
                                     <div className="flex gap-1">
@@ -171,13 +177,11 @@ export function ImageGenerator() {
                             )}
                         </div>
                         <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
-                        <p className="text-[10px] font-medium text-white/40 uppercase tracking-widest mt-2">Maximum 4 images allowed</p>
+                        <p className="text-[10px] font-medium text-white/40 uppercase tracking-widest mt-2">{refImages.length} of {MAX_IMAGES} images</p>
                     </div>
 
-                    {/* Configuration */}
-                    <div className="space-y-6">
-                        <SectionLabel icon={Settings2}>Configuration</SectionLabel>
-
+                    {/* Configuration Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 pb-4">
                         {/* Quality */}
                         <div className="space-y-3">
                             <label className="text-[11px] font-bold text-white uppercase tracking-[0.2em]">Quality Level</label>
@@ -214,24 +218,27 @@ export function ImageGenerator() {
                     </div>
                 </div>
 
-                {/* Fixed Generation Footer */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent pt-12 border-t border-white/5">
+                {/* Sticky Generation Footer */}
+                <div className="sticky lg:absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent pt-10 border-t border-white/5 backdrop-blur-md pb-[max(1.5rem,env(safe-area-inset-bottom)+5rem)] lg:pb-6">
                     <button
                         onClick={handleGenerate}
                         disabled={loading || !prompt.trim()}
                         className={cn(
-                            "w-full h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]",
-                            loading ? "bg-zinc-800 text-zinc-500" : "bg-white text-black hover:bg-zinc-200"
+                            "w-full h-14 rounded-2xl font-bold text-base uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-2xl overflow-hidden group relative",
+                            loading ? "bg-zinc-800 text-white/50 cursor-not-allowed" : "bg-white text-black hover:bg-zinc-200"
                         )}
                     >
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                        {loading ? `Dreaming (${loadingProgress}%)` : "Generate Image"}
+                        {loading && <div className="absolute inset-0 bg-black/5 animate-shimmer" />}
+                        <div className="relative z-10 flex items-center gap-3">
+                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                            {loading ? `Dreaming (${loadingProgress}%)` : "Generate Image"}
+                        </div>
                     </button>
                 </div>
             </aside>
 
             {/* Canvas Area */}
-            <main ref={previewRef} className="flex-1 bg-zinc-950 relative overflow-y-auto custom-scrollbar">
+            <main ref={previewRef} className="flex-1 bg-zinc-950 relative overflow-y-auto custom-scrollbar pb-60 lg:pb-0">
                 <div className="absolute inset-0 noise-bg opacity-[0.03] pointer-events-none" />
 
                 <div className="max-w-6xl mx-auto p-6 md:p-12 min-h-full flex flex-col items-center justify-center">
