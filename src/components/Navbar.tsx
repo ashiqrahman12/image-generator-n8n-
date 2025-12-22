@@ -91,7 +91,7 @@ export function Navbar() {
                 <div className="flex items-center gap-3">
                     {user ? (
                         <div className="flex items-center gap-3 bg-white/10 pl-4 pr-1.5 py-1.5 rounded-full border border-white/20">
-                            <span className="hidden sm:block text-xs font-black text-white uppercase tracking-wider">{user.name.split(' ')[0]}</span>
+                            <span className="hidden sm:block text-xs font-bold text-white uppercase tracking-wider">{user.name.split(' ')[0]}</span>
                             <img src={user.picture} alt="Profile" className="w-8 h-8 rounded-full border border-white/30" />
                             <button
                                 onClick={handleLogout}
@@ -103,7 +103,7 @@ export function Navbar() {
                     ) : (
                         <button
                             onClick={() => login()}
-                            className="h-10 px-6 bg-white rounded-full text-black text-xs font-black uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2.5 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
+                            className="h-10 px-6 bg-white rounded-full text-black text-xs font-bold uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2.5 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                         >
                             Sign In
                             <ArrowRight className="w-4 h-4" />

@@ -44,8 +44,8 @@
 
   --radius: 0.75rem;
 
-  /* Font Family - Clean Inter sans-serif */
-  --font-sans: "Inter", "SF Pro Display", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, sans-serif;
+  /* Font Family - Native UI Sans */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
 }
 
 @theme inline {
@@ -98,7 +98,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans font-semibold selection:bg-white/20 selection:text-white;
+    @apply bg-background text-foreground font-sans selection:bg-white/20 selection:text-white;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }

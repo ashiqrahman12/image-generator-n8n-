@@ -22,7 +22,7 @@ const SkeletonLoader = () => (
 );
 
 const SectionLabel = ({ children, icon: Icon }: { children: React.ReactNode; icon?: any }) => (
-    <label className="flex items-center gap-2 text-[11px] uppercase font-black tracking-[0.18em] text-white mb-2.5">
+    <label className="flex items-center gap-2 text-[11px] uppercase font-bold tracking-[0.18em] text-white mb-2.5">
         {Icon && <Icon className="w-3.5 h-3.5 text-white" />}
         {children}
     </label>
@@ -135,7 +135,7 @@ export function ImageGenerator() {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Describe what you want to create..."
-                                    className="w-full h-32 bg-transparent border-none resize-none text-base font-bold text-white placeholder:text-white/40 focus:ring-0 leading-relaxed custom-scrollbar"
+                                    className="w-full h-32 bg-transparent border-none resize-none text-base font-normal text-white placeholder:text-white/40 focus:ring-0 leading-relaxed custom-scrollbar"
                                 />
                                 <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
                                     <div className="flex gap-1">
@@ -146,7 +146,7 @@ export function ImageGenerator() {
                                             <Sparkles className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <span className="text-[11px] font-bold text-white/50 tracking-wide uppercase">{prompt.length} / 1000</span>
+                                    <span className="text-[11px] font-medium text-white/50 tracking-wide uppercase">{prompt.length} / 1000</span>
                                 </div>
                             </div>
                         </div>
@@ -171,7 +171,7 @@ export function ImageGenerator() {
                             )}
                         </div>
                         <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
-                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-2">Maximum 4 images allowed</p>
+                        <p className="text-[10px] font-medium text-white/40 uppercase tracking-widest mt-2">Maximum 4 images allowed</p>
                     </div>
 
                     {/* Configuration */}
@@ -180,14 +180,14 @@ export function ImageGenerator() {
 
                         {/* Quality */}
                         <div className="space-y-3">
-                            <label className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Quality Level</label>
+                            <label className="text-[11px] font-bold text-white uppercase tracking-[0.2em]">Quality Level</label>
                             <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/10">
                                 {qualityOptions.map((opt) => (
                                     <button
                                         key={opt.id}
                                         onClick={() => setQuality(opt.id as any)}
                                         className={cn(
-                                            "flex-1 py-2.5 text-[11px] font-black rounded-lg transition-all tracking-tight uppercase",
+                                            "flex-1 py-2.5 text-[11px] font-bold rounded-lg transition-all tracking-tight uppercase",
                                             quality === opt.id ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white"
                                         )}
                                     >
@@ -199,12 +199,12 @@ export function ImageGenerator() {
 
                         {/* Aspect Ratio */}
                         <div className="space-y-3">
-                            <label className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Aspect Ratio</label>
+                            <label className="text-[11px] font-bold text-white uppercase tracking-[0.2em]">Aspect Ratio</label>
                             <div className="relative">
                                 <select
                                     value={aspectRatio}
                                     onChange={(e) => setAspectRatio(e.target.value as any)}
-                                    className="w-full h-12 bg-zinc-900/80 border border-white/10 rounded-xl px-4 text-sm font-bold text-white appearance-none focus:outline-none focus:border-white/30 transition-all cursor-pointer shadow-xl"
+                                    className="w-full h-12 bg-zinc-900/80 border border-white/10 rounded-xl px-4 text-sm font-medium text-white appearance-none focus:outline-none focus:border-white/30 transition-all cursor-pointer shadow-xl"
                                 >
                                     {aspectRatioOptions.map(opt => <option key={opt.id} value={opt.id} className="bg-zinc-950">{opt.label}</option>)}
                                 </select>
