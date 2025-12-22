@@ -79,7 +79,7 @@ export function Navbar() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className="px-4 py-1.5 rounded-full text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                            className="px-5 py-2 rounded-full text-sm font-bold text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5"
                         >
                             <item.icon className="w-4 h-4" />
                             {item.name}
@@ -90,23 +90,23 @@ export function Navbar() {
                 {/* Actions */}
                 <div className="flex items-center gap-3">
                     {user ? (
-                        <div className="flex items-center gap-3 bg-zinc-900/50 pl-3 pr-1 py-1 rounded-full border border-white/5">
-                            <span className="hidden sm:block text-xs font-medium text-zinc-300 mr-1">{user.name.split(' ')[0]}</span>
-                            <img src={user.picture} alt="Profile" className="w-7 h-7 rounded-full border border-white/10" />
+                        <div className="flex items-center gap-3 bg-white/10 pl-4 pr-1.5 py-1.5 rounded-full border border-white/20">
+                            <span className="hidden sm:block text-xs font-black text-white uppercase tracking-wider">{user.name.split(' ')[0]}</span>
+                            <img src={user.picture} alt="Profile" className="w-8 h-8 rounded-full border border-white/30" />
                             <button
                                 onClick={handleLogout}
-                                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-all"
                             >
-                                <LogOut className="w-3.5 h-3.5" />
+                                <LogOut className="w-4 h-4" />
                             </button>
                         </div>
                     ) : (
                         <button
                             onClick={() => login()}
-                            className="h-9 px-5 bg-white rounded-full text-black text-xs font-bold hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
+                            className="h-10 px-6 bg-white rounded-full text-black text-xs font-black uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2.5 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                         >
                             Sign In
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <ArrowRight className="w-4 h-4" />
                         </button>
                     )}
                 </div>

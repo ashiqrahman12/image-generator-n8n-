@@ -22,8 +22,8 @@ const SkeletonLoader = () => (
 );
 
 const SectionLabel = ({ children, icon: Icon }: { children: React.ReactNode; icon?: any }) => (
-    <label className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-[0.15em] text-zinc-500 mb-2">
-        {Icon && <Icon className="w-3 h-3" />}
+    <label className="flex items-center gap-2 text-[11px] uppercase font-black tracking-[0.18em] text-white mb-2.5">
+        {Icon && <Icon className="w-3.5 h-3.5 text-white" />}
         {children}
     </label>
 );
@@ -135,18 +135,18 @@ export function ImageGenerator() {
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
                                     placeholder="Describe what you want to create..."
-                                    className="w-full h-32 bg-transparent border-none resize-none text-sm placeholder:text-zinc-600 focus:ring-0 leading-relaxed custom-scrollbar"
+                                    className="w-full h-32 bg-transparent border-none resize-none text-base font-bold text-white placeholder:text-white/40 focus:ring-0 leading-relaxed custom-scrollbar"
                                 />
-                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
                                     <div className="flex gap-1">
-                                        <button onClick={handleVoiceInput} className={cn("p-2 rounded-lg transition-colors", isListening ? "bg-red-500/20 text-red-500 animate-pulse" : "text-zinc-500 hover:text-white hover:bg-white/5")}>
+                                        <button onClick={handleVoiceInput} className={cn("p-2 rounded-lg transition-colors", isListening ? "bg-red-500/20 text-red-500 animate-pulse" : "text-white/70 hover:text-white hover:bg-white/5")}>
                                             <Mic className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                        <button className="p-2 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
                                             <Sparkles className="w-4 h-4" />
                                         </button>
                                     </div>
-                                    <span className="text-[10px] font-medium text-zinc-600 tracking-wide">{prompt.length} / 1000</span>
+                                    <span className="text-[11px] font-bold text-white/50 tracking-wide uppercase">{prompt.length} / 1000</span>
                                 </div>
                             </div>
                         </div>
@@ -171,6 +171,7 @@ export function ImageGenerator() {
                             )}
                         </div>
                         <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
+                        <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest mt-2">Maximum 4 images allowed</p>
                     </div>
 
                     {/* Configuration */}
@@ -179,15 +180,15 @@ export function ImageGenerator() {
 
                         {/* Quality */}
                         <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Quality Level</label>
-                            <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/5">
+                            <label className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Quality Level</label>
+                            <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/10">
                                 {qualityOptions.map((opt) => (
                                     <button
                                         key={opt.id}
                                         onClick={() => setQuality(opt.id as any)}
                                         className={cn(
-                                            "flex-1 py-2 text-[10px] font-bold rounded-lg transition-all tracking-tight",
-                                            quality === opt.id ? "bg-zinc-800 text-white shadow-lg border border-white/5" : "text-zinc-500 hover:text-zinc-300"
+                                            "flex-1 py-2.5 text-[11px] font-black rounded-lg transition-all tracking-tight uppercase",
+                                            quality === opt.id ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white"
                                         )}
                                     >
                                         {opt.label}
@@ -198,16 +199,16 @@ export function ImageGenerator() {
 
                         {/* Aspect Ratio */}
                         <div className="space-y-3">
-                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Ratio</label>
+                            <label className="text-[11px] font-black text-white uppercase tracking-[0.2em]">Aspect Ratio</label>
                             <div className="relative">
                                 <select
                                     value={aspectRatio}
                                     onChange={(e) => setAspectRatio(e.target.value as any)}
-                                    className="w-full h-11 bg-zinc-900/50 border border-white/10 rounded-xl px-4 text-xs font-medium appearance-none focus:outline-none focus:border-white/20 transition-all cursor-pointer"
+                                    className="w-full h-12 bg-zinc-900/80 border border-white/10 rounded-xl px-4 text-sm font-bold text-white appearance-none focus:outline-none focus:border-white/30 transition-all cursor-pointer shadow-xl"
                                 >
                                     {aspectRatioOptions.map(opt => <option key={opt.id} value={opt.id} className="bg-zinc-950">{opt.label}</option>)}
                                 </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none" />
                             </div>
                         </div>
                     </div>
