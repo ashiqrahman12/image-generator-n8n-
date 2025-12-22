@@ -2,52 +2,50 @@
 
 @plugin "tailwindcss-animate";
 
-@import "tailwindcss";
-
-@plugin "tailwindcss-animate";
-
 :root {
-  /* Dark Orange Brand Theme */
+  /* 2025 Premium AI Design System - Neutral Dark */
 
-  --background: #000000;
-  /* Pure Black */
-  --foreground: #ffffff;
-  /* Pure White */
+  --background: #09090b;
+  /* Zinc 950 */
+  --foreground: #fafafa;
+  /* Zinc 50 */
 
-  /* Primary: #FF6B00 (Vibrant Dark Orange) */
-  --primary: #FF6B00;
-  --primary-foreground: #ffffff;
+  /* Neutral/Zinc Palette for UI elements */
+  --muted: #18181b;
+  /* Zinc 900 */
+  --muted-foreground: #a1a1aa;
+  /* Zinc 400 */
 
-  --primary-light: #FF8533;
-  --primary-dark: #CC5500;
+  --popover: #09090b;
+  --popover-foreground: #fafafa;
 
-  /* Secondary: Darker gray for contrast */
-  --secondary: #1A1A1A;
-  --secondary-foreground: #FF6B00;
+  --card: #09090b;
+  --card-foreground: #fafafa;
 
-  /* Accent */
-  --accent: #FF6B00;
-  --accent-foreground: #ffffff;
+  --border: #27272a;
+  /* Zinc 800 */
+  --input: #27272a;
 
-  --muted: #262626;
-  --muted-foreground: #a3a3a3;
+  /* Primary: Deep Indigo with subtle glow (Modern AI feel) */
+  --primary: #FFFFFF;
+  --primary-foreground: #09090b;
 
-  --border: #333333;
-  --input: #1A1A1A;
-  --ring: #FF6B00;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
 
-  --card: #000000;
-  --card-foreground: #ffffff;
-  --card-hover: #111111;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
 
-  --popover: #000000;
-  --popover-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #fafafa;
 
-  --radius: 1rem;
+  --ring: #d4d4d8;
+  /* Zinc 300 */
 
-  /* Fonts */
-  --font-sans: var(--font-roboto);
-  --font-heading: var(--font-playfair);
+  --radius: 0.75rem;
+
+  /* Font Family - Clean Inter sans-serif */
+  --font-sans: "Inter", "SF Pro Display", -apple-system, blinkmacsystemfont, "Segoe UI", roboto, sans-serif;
 }
 
 @theme inline {
@@ -65,60 +63,70 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-primary-light: var(--primary-light);
-  --color-primary-dark: var(--primary-dark);
-  --color-card-hover: var(--card-hover);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 12px);
+  --radius-3xl: calc(var(--radius) + 20px);
 
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-heading);
+  --animate-shimmer: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-none;
   }
 
   html {
-    font-size: 18px;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
   }
 
   body {
-    @apply bg-background text-foreground font-sans font-bold;
-    letter-spacing: -0.01em;
+    @apply bg-background text-foreground font-sans selection:bg-white/10 selection:text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-heading), serif;
-  font-weight: 800;
-  /* Extra bold for headings */
-  letter-spacing: -0.02em;
+@layer utilities {
+  .glass {
+    @apply bg-black/40 backdrop-blur-xl border border-white/10;
+  }
+
+  .glass-card {
+    @apply bg-zinc-900/40 backdrop-blur-md border border-zinc-800/50;
+  }
+
+  .noise-bg {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+  }
 }
 
-/* Custom scrollbar with Dark Orange theme */
+/* Custom scrollbar for premium look */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--secondary);
+  @apply bg-transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--primary);
-  border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-dark);
+  @apply bg-zinc-800 rounded-full hover:bg-zinc-700 transition-colors;
 }

@@ -1,59 +1,52 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2 } from "lucide-react";
+import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2, Zap, Settings2, Info, Boxes } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
-import { GlowingBorder } from "@/components/ui/glowing-border";
-import * as SimpleAccordion from "@/components/ui/simple-accordion";
 
-// --- Components (Shadcn-like Primitives) ---
+// --- Premium UI Primitives ---
 const SkeletonLoader = () => (
-    <div className="w-full h-full relative overflow-hidden bg-secondary/20 rounded-3xl border border-white/50 backdrop-blur-sm">
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+    <div className="w-full h-full relative overflow-hidden bg-zinc-900/50 rounded-2xl border border-white/5 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full animate-shimmer" />
         <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-3 opacity-30">
-                <Sparkles className="w-12 h-12 text-primary" />
-                <p className="font-medium text-sm text-primary">Dreaming...</p>
+            <div className="flex flex-col items-center gap-4 opacity-50">
+                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center animate-pulse">
+                    <Sparkles className="w-6 h-6 text-white" />
+                </div>
+                <p className="text-xs font-medium text-zinc-400 tracking-wider uppercase">Synthesizing...</p>
             </div>
         </div>
     </div>
 );
 
-const Label = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)}>
+const SectionLabel = ({ children, icon: Icon }: { children: React.ReactNode; icon?: any }) => (
+    <label className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-[0.15em] text-zinc-500 mb-2">
+        {Icon && <Icon className="w-3 h-3" />}
         {children}
     </label>
 );
 
-const InputStyles = "flex h-12 w-full rounded-xl border border-input bg-background/50 backdrop-blur-sm px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm focus:bg-background";
-
 // --- Options Data ---
 const qualityOptions = [
-    { id: "1k", label: "1K", icon: Monitor, desc: "1024px" },
-    { id: "2k", label: "2K", icon: Monitor, desc: "2048px" },
-    { id: "4k", label: "4K", icon: Monitor, desc: "4096px" },
+    { id: "1k", label: "Standard", desc: "1024px" },
+    { id: "2k", label: "High Def", desc: "2048px" },
+    { id: "4k", label: "Ultra HD", desc: "4096px" },
 ] as const;
 
 const aspectRatioOptions = [
-    { id: "1:1", label: "Square", desc: "1:1" },
-    { id: "9:16", label: "Portrait", desc: "9:16" },
-    { id: "16:9", label: "Landscape", desc: "16:9" },
-] as const;
-
-const outputFormatOptions = [
-    { id: "png", label: "PNG", desc: "Lossless" },
-    { id: "jpg", label: "JPG", desc: "Compressed" },
+    { id: "1:1", label: "1:1 Square" },
+    { id: "9:16", label: "9:16 Portrait" },
+    { id: "16:9", label: "16:9 Landscape" },
 ] as const;
 
 export function ImageGenerator() {
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
-    // Updated state to hold array of images
     const [generatedImages, setGeneratedImages] = useState<string[]>([]);
-    const [selectedImage, setSelectedImage] = useState<string | null>(null); // For lightbox
+    const [selectedImage, setSelectedImage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [quality, setQuality] = useState<"1k" | "2k" | "4k">("2k");
     const [aspectRatio, setAspectRatio] = useState<"1:1" | "9:16" | "16:9">("1:1");
@@ -63,71 +56,40 @@ export function ImageGenerator() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const previewRef = useRef<HTMLElement>(null);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    const MAX_IMAGES = 4; // reduced matching design usually
-    const MAX_SIZE_MB = 10; // slightly increased for modern standards
+    const MAX_IMAGES = 4;
+    const MAX_SIZE_MB = 10;
 
-    // Voice Input Handler
     const handleVoiceInput = () => {
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Voice input is not supported in your browser.');
-            return;
-        }
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert('Voice input is not supported in your browser.');
         const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
         recognition.onstart = () => setIsListening(true);
         recognition.onend = () => setIsListening(false);
-        recognition.onerror = () => setIsListening(false);
-        recognition.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript;
-            setPrompt((prev) => prev ? `${prev} ${transcript}` : transcript);
-        };
+        recognition.onresult = (e: any) => setPrompt((p) => p ? `${p} ${e.results[0][0].transcript}` : e.results[0][0].transcript);
         isListening ? recognition.stop() : recognition.start();
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files) return;
+        if (!e.target.files) return;
         const newImages: { file: File; preview: string }[] = [];
-        let totalSize = refImages.reduce((acc, img) => acc + img.file.size, 0);
-        Array.from(files).forEach((file) => {
-            if (refImages.length + newImages.length >= MAX_IMAGES) return alert(`Maximum ${MAX_IMAGES} images allowed.`);
-            totalSize += file.size;
-            if (totalSize > MAX_SIZE_MB * 1024 * 1024) return alert(`Total size exceeds ${MAX_SIZE_MB}MB limit.`);
+        Array.from(e.target.files).forEach((file) => {
+            if (refImages.length + newImages.length >= MAX_IMAGES) return;
             newImages.push({ file, preview: URL.createObjectURL(file) });
         });
         setRefImages((prev) => [...prev, ...newImages]);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    const removeImage = (index: number) => {
-        setRefImages((prev) => {
-            const updated = [...prev];
-            URL.revokeObjectURL(updated[index].preview);
-            updated.splice(index, 1);
-            return updated;
-        });
     };
 
     const handleGenerate = async () => {
-        if (!prompt.trim()) return;
+        if (!prompt.trim() || loading) return;
         setLoading(true);
         setLoadingProgress(0);
         setError(null);
-        setGeneratedImages([]); // Clear previous results
-        setSelectedImage(null);
+        setGeneratedImages([]);
 
-        // Simulate progress
         const interval = setInterval(() => {
-            setLoadingProgress((prev) => {
-                if (prev >= 90) return prev; // Hold at 90% until done
-                return prev + Math.floor(Math.random() * 10) + 5;
-            });
-        }, 800);
+            setLoadingProgress((p) => (p >= 90 ? p : p + Math.floor(Math.random() * 5) + 2));
+        }, 500);
 
         try {
             const formData = new FormData();
@@ -135,354 +97,234 @@ export function ImageGenerator() {
             formData.append("quality", quality);
             formData.append("aspectRatio", aspectRatio);
             formData.append("outputFormat", outputFormat);
-            refImages.forEach((img, index) => formData.append(`referenceImage_${index}`, img.file, img.file.name));
+            refImages.forEach((img, i) => formData.append(`referenceImage_${i}`, img.file));
             formData.append("referenceImageCount", String(refImages.length));
 
-            const response = await fetch("/api/generate", { method: "POST", body: formData });
-            if (!response.ok) throw new Error("Failed to generate image");
-            const data = await response.json();
-
-            console.log("API Response:", data); // Debug log
+            const res = await fetch("/api/generate", { method: "POST", body: formData });
+            if (!res.ok) throw new Error("Generation failed");
+            const data = await res.json();
 
             clearInterval(interval);
             setLoadingProgress(100);
 
-            if (data.imageUrls && data.imageUrls.length > 0) {
-                setTimeout(() => { // Small delay to show 100%
+            if (data.imageUrls?.length) {
+                setTimeout(() => {
                     setGeneratedImages(data.imageUrls);
                     setLoading(false);
-                }, 500);
-
-                // History Logic (Save all generated, max 3 in storage)
-                try {
-                    const newItems = data.imageUrls.map((url: string) => ({
-                        id: Date.now().toString() + Math.random().toString(),
-                        image: url,
-                        prompt: prompt,
-                        timestamp: Date.now()
-                    }));
-
-                    const stored = localStorage.getItem("imageHistory");
-                    const history = stored ? JSON.parse(stored) : [];
-                    localStorage.setItem("imageHistory", JSON.stringify([...newItems, ...history].slice(0, 5))); // Increased history slightly
-                } catch (e) { console.error("Failed to save history", e); }
-            } else { setError("No image data received from API"); setLoading(false); }
+                }, 400);
+            }
         } catch (err: any) {
             clearInterval(interval);
-            console.error("Generation error:", err);
-            setError(err.message || "An error occurred.");
+            setError(err.message);
             setLoading(false);
         }
     };
 
-    useEffect(() => {
-        if ((loading || generatedImages.length > 0) && window.innerWidth < 1024) {
-            setTimeout(() => {
-                previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }, 100);
-        }
-    }, [loading, generatedImages]);
-
-    // Format grid based on image count
-    const getGridClass = (count: number) => {
-        if (count === 1) return "grid-cols-1";
-        if (count === 2) return "grid-cols-1 md:grid-cols-2";
-        return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"; // Masonry-ish feel
-    };
-
     return (
-        <div className="flex flex-col lg:flex-row h-[calc(100dvh-4rem)] bg-background">
-            {/* LEFT PANEL: Controls (Scrollable) */}
-            <aside
-                ref={scrollContainerRef}
-                className="w-full lg:w-[420px] flex flex-col bg-white/5 backdrop-blur-xl border-r border-white/10 overflow-y-auto overflow-x-hidden scroll-smooth shadow-[4px_0_24px_-4px_rgba(0,0,0,0.05)] z-20"
-            >
-                <div className="p-5 lg:p-6 pb-40 space-y-8">
-                    {/* Header - Now simplified as per design */}
-                    <div className="hidden lg:flex items-center gap-2 mb-6">
-                        <div className="h-8 w-1 bg-gradient-to-b from-purple-500 to-primary rounded-full" />
-                        <h2 className="font-bold text-xl text-white">Describe Your Vision</h2>
-                    </div>
-
-                    {/* Prompt Input Section */}
-                    <div className="space-y-4">
-                        <Label className="text-lg text-white font-extrabold flex items-center gap-2">
-                            <Sparkles className="w-5 h-5 text-primary" /> Describe Your Vision
-                        </Label>
-                        <GlowingBorder containerClassName="rounded-2xl">
-                            <div className="relative bg-[#0A0A0A] p-4 rounded-2xl">
+        <div className="flex flex-col lg:flex-row h-screen bg-background text-foreground overflow-hidden pt-20">
+            {/* Control Sidebar */}
+            <aside className="w-full lg:w-[440px] border-r border-white/5 bg-zinc-950/20 backdrop-blur-2xl flex flex-col overflow-y-auto custom-scrollbar">
+                <div className="p-6 space-y-8 pb-32">
+                    {/* Prompt Section */}
+                    <div className="space-y-3">
+                        <SectionLabel icon={Zap}>Prompt</SectionLabel>
+                        <div className="group relative">
+                            <div className="absolute -inset-0.5 bg-gradient-to-br from-white/10 to-white/0 rounded-2xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                            <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-4 transition-all focus-within:border-white/20 focus-within:ring-1 focus-within:ring-white/10">
                                 <textarea
                                     value={prompt}
                                     onChange={(e) => setPrompt(e.target.value)}
-                                    placeholder="A majestic dragon soaring through a sunset sky..."
-                                    className="w-full h-32 bg-transparent border-none focus:ring-0 text-white placeholder:text-white/30 resize-none text-lg font-bold leading-relaxed"
+                                    placeholder="Describe what you want to create..."
+                                    className="w-full h-32 bg-transparent border-none resize-none text-sm placeholder:text-zinc-600 focus:ring-0 leading-relaxed custom-scrollbar"
                                 />
-                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
-                                    <span className="text-sm font-bold text-white/40">{prompt.length} characters</span>
-                                    <button
-                                        type="button"
-                                        onClick={handleVoiceInput}
-                                        className={cn("flex items-center gap-2 text-sm font-black transition-all", isListening ? "text-red-500 animate-pulse" : "text-primary hover:text-primary-light")}
-                                    >
-                                        {isListening ? <MicOff className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                                        {isListening ? "Stop Listening" : "Enhance Prompt"}
-                                    </button>
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                    <div className="flex gap-1">
+                                        <button onClick={handleVoiceInput} className={cn("p-2 rounded-lg transition-colors", isListening ? "bg-red-500/20 text-red-500 animate-pulse" : "text-zinc-500 hover:text-white hover:bg-white/5")}>
+                                            <Mic className="w-4 h-4" />
+                                        </button>
+                                        <button className="p-2 text-zinc-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
+                                            <Sparkles className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <span className="text-[10px] font-medium text-zinc-600 tracking-wide">{prompt.length} / 1000</span>
                                 </div>
                             </div>
-                        </GlowingBorder>
+                        </div>
                     </div>
 
-                    {/* Reference Images - Drag & Drop Style */}
+                    {/* Reference Images */}
                     <div className="space-y-4">
-                        <Label className="text-lg text-white font-extrabold flex items-center gap-2">
-                            <ImageIcon className="w-5 h-5 text-primary" />
-                            Reference Images <span className="text-xs font-bold text-white/30 ml-auto">(Max 4)</span>
-                        </Label>
-
-                        <div className="grid grid-cols-1 gap-4">
-                            <input type="file" ref={fileInputRef} accept="image/*" multiple onChange={handleFileChange} className="hidden" />
-
-                            {refImages.length > 0 && (
-                                <div className="grid grid-cols-4 gap-2 mb-2">
-                                    {refImages.map((img, index) => (
-                                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-white/20 group">
-                                            <img src={img.preview} alt="Ref" className="w-full h-full object-cover" />
-                                            <button onClick={() => removeImage(index)} className="absolute top-1 right-1 p-1 bg-black/60 text-white rounded-full hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                                                <X className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
+                        <SectionLabel icon={Boxes}>Structure Reference</SectionLabel>
+                        <div className="grid grid-cols-4 gap-2">
+                            {refImages.map((img, i) => (
+                                <motion.div key={i} layoutId={`ref-${i}`} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group">
+                                    <img src={img.preview} className="w-full h-full object-cover" />
+                                    <button onClick={() => setRefImages(r => r.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </motion.div>
+                            ))}
                             {refImages.length < MAX_IMAGES && (
-                                <GlowingBorder containerClassName="rounded-2xl">
-                                    <motion.button
-                                        whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => fileInputRef.current?.click()}
-                                        className="rounded-2xl h-36 w-full flex flex-col items-center justify-center gap-3 text-white bg-black hover:text-primary transition-all group"
-                                    >
-                                        <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                            <Upload className="w-6 h-6" />
-                                        </div>
-                                        <div className="text-center">
-                                            <p className="text-base font-black">Drag & drop or browse</p>
-                                            <p className="text-xs font-bold opacity-40 mt-1">JPG, PNG supported</p>
-                                        </div>
-                                    </motion.button>
-                                </GlowingBorder>
+                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border border-dashed border-white/10 flex items-center justify-center hover:bg-white/5 hover:border-white/20 transition-all group">
+                                    <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300" />
+                                </button>
                             )}
                         </div>
+                        <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
                     </div>
 
-                    {/* Advanced Settings Accordion */}
-                    <SimpleAccordion.AccordionItem
-                        title="Advanced Settings"
-                        className="border-t border-white/10 pt-4"
-                    >
-                        <div className="space-y-6 pt-4">
-                            {/* Quality */}
-                            <div className="space-y-4">
-                                <Label className="text-xs uppercase font-black tracking-widest text-primary/70">Generation Quality</Label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {qualityOptions.map((opt) => (
-                                        <GlowingBorder key={opt.id} containerClassName={cn("rounded-xl", quality !== opt.id && "bg-transparent")}>
-                                            <button
-                                                onClick={() => setQuality(opt.id)}
-                                                className={cn(
-                                                    "w-full px-3 py-3 rounded-xl text-xs font-black transition-all border-none relative overflow-hidden",
-                                                    quality === opt.id
-                                                        ? "bg-primary text-white"
-                                                        : "bg-white/5 text-white/50 hover:bg-white/10"
-                                                )}
-                                            >
-                                                {opt.label}
-                                            </button>
-                                        </GlowingBorder>
-                                    ))}
-                                </div>
-                            </div>
+                    {/* Configuration */}
+                    <div className="space-y-6">
+                        <SectionLabel icon={Settings2}>Configuration</SectionLabel>
 
-                            {/* Aspect Ratio & Format */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-3">
-                                    <Label className="text-xs uppercase font-black tracking-widest text-primary/70">Aspect Ratio</Label>
-                                    <GlowingBorder containerClassName="rounded-xl">
-                                        <div className="relative">
-                                            <select
-                                                value={aspectRatio}
-                                                onChange={(e) => setAspectRatio(e.target.value as any)}
-                                                className="w-full h-12 pl-4 pr-10 bg-black border-none rounded-xl text-sm font-bold text-white focus:outline-none appearance-none cursor-pointer"
-                                            >
-                                                {aspectRatioOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black text-white">{opt.label}</option>)}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
-                                        </div>
-                                    </GlowingBorder>
-                                </div>
-                                <div className="space-y-3">
-                                    <Label className="text-xs uppercase font-black tracking-widest text-primary/70">Output Format</Label>
-                                    <GlowingBorder containerClassName="rounded-xl">
-                                        <div className="relative">
-                                            <select
-                                                value={outputFormat}
-                                                onChange={(e) => setOutputFormat(e.target.value as any)}
-                                                className="w-full h-12 pl-4 pr-10 bg-black border-none rounded-xl text-sm font-bold text-white focus:outline-none appearance-none cursor-pointer"
-                                            >
-                                                {outputFormatOptions.map((opt) => <option key={opt.id} value={opt.id} className="bg-black text-white">{opt.label}</option>)}
-                                            </select>
-                                            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
-                                        </div>
-                                    </GlowingBorder>
-                                </div>
+                        {/* Quality */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Quality Level</label>
+                            <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/5">
+                                {qualityOptions.map((opt) => (
+                                    <button
+                                        key={opt.id}
+                                        onClick={() => setQuality(opt.id as any)}
+                                        className={cn(
+                                            "flex-1 py-2 text-[10px] font-bold rounded-lg transition-all tracking-tight",
+                                            quality === opt.id ? "bg-zinc-800 text-white shadow-lg border border-white/5" : "text-zinc-500 hover:text-zinc-300"
+                                        )}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    </SimpleAccordion.AccordionItem>
+
+                        {/* Aspect Ratio */}
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Ratio</label>
+                            <div className="relative">
+                                <select
+                                    value={aspectRatio}
+                                    onChange={(e) => setAspectRatio(e.target.value as any)}
+                                    className="w-full h-11 bg-zinc-900/50 border border-white/10 rounded-xl px-4 text-xs font-medium appearance-none focus:outline-none focus:border-white/20 transition-all cursor-pointer"
+                                >
+                                    {aspectRatioOptions.map(opt => <option key={opt.id} value={opt.id} className="bg-zinc-950">{opt.label}</option>)}
+                                </select>
+                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 pointer-events-none" />
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Generate Button - Fixed at bottom */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black via-black to-transparent z-20">
-                    <GlowingBorder containerClassName="rounded-2xl">
-                        <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={handleGenerate}
-                            disabled={loading || !prompt.trim()}
-                            className={cn(
-                                "w-full h-16 rounded-2xl font-black text-xl text-white shadow-2xl relative overflow-hidden group border-none"
-                            )}
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-primary to-purple-800 animate-gradient-x" />
-                            <span className="relative z-10 flex items-center justify-center gap-3">
-                                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Sparkles className="w-6 h-6 fill-white" />}
-                                Generate Images
-                            </span>
-                        </motion.button>
-                    </GlowingBorder>
+                {/* Fixed Generation Footer */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent pt-12 border-t border-white/5">
+                    <button
+                        onClick={handleGenerate}
+                        disabled={loading || !prompt.trim()}
+                        className={cn(
+                            "w-full h-12 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]",
+                            loading ? "bg-zinc-800 text-zinc-500" : "bg-white text-black hover:bg-zinc-200"
+                        )}
+                    >
+                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                        {loading ? `Dreaming (${loadingProgress}%)` : "Generate Image"}
+                    </button>
                 </div>
             </aside>
 
-            {/* Sticky Action Footer (Mobile Only - Glassmorphism) */}
-            <div className="lg:hidden fixed bottom-[4.5rem] left-0 right-0 p-4 bg-white/80 backdrop-blur-xl border-t border-white/20 z-40 pb-4 shadow-[0_-8px_32px_rgba(0,0,0,0.05)]">
-                <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleGenerate}
-                    disabled={loading || !prompt.trim()}
-                    className={cn(
-                        "w-full h-12 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/30",
-                        "bg-gradient-to-r from-primary to-primary-dark hover:brightness-110",
-                        "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
-                    )}
-                >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                    <span>{loading ? "Generating..." : "Generate Image"}</span>
-                </motion.button>
-            </div>
+            {/* Canvas Area */}
+            <main ref={previewRef} className="flex-1 bg-zinc-950 relative overflow-y-auto custom-scrollbar">
+                <div className="absolute inset-0 noise-bg opacity-[0.03] pointer-events-none" />
 
-            {/* RIGHT PANEL: Preview (Masonry Layout) */}
-            <main ref={previewRef} className="flex-1 bg-secondary/10 relative flex flex-col items-center p-4 lg:p-10 overflow-y-auto">
-                {/* Premium Glass/Noise Pattern */}
-                <div className="absolute inset-0 opacity-20 pointer-events-none noise-bg mix-blend-overlay" />
-                <div className="absolute inset-0 opacity-30 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#90AB8B 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
-
-                <div className="w-full max-w-5xl flex-1 flex flex-col min-h-[500px] lg:min-h-0 pb-32 lg:pb-0 justify-center">
+                <div className="max-w-6xl mx-auto p-6 md:p-12 min-h-full flex flex-col items-center justify-center">
                     <AnimatePresence mode="wait">
                         {generatedImages.length === 0 && !loading && !error && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-center self-center my-auto">
-                                <div className="w-24 h-24 bg-white rounded-[2rem] mx-auto mb-6 flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white">
-                                    <ImageIcon className="w-10 h-10 text-primary/40" />
+                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="text-center">
+                                <div className="w-20 h-20 rounded-3xl bg-zinc-900 border border-white/5 mx-auto mb-6 flex items-center justify-center shadow-2xl">
+                                    <ImageIcon className="w-8 h-8 text-zinc-700" />
                                 </div>
-                                <h3 className="text-xl font-bold text-foreground mb-2 tracking-tight">Canvas Ready</h3>
-                                <p className="text-sm text-muted">Awaiting your creative input.</p>
+                                <h1 className="text-2xl font-bold tracking-tight mb-2">Infinite Possibilities</h1>
+                                <p className="text-sm text-zinc-500 max-w-xs mx-auto">Your vision will appear here. Describe anything to get started.</p>
                             </motion.div>
                         )}
 
                         {loading && (
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-full h-full flex flex-col items-center justify-center gap-6">
-                                <div className="w-full max-w-md aspect-square rounded-3xl overflow-hidden shadow-2xl relative">
-                                    <SkeletonLoader />
-
-                                    {/* Progress Overlay */}
-                                    <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between text-white text-xs font-medium px-1">
-                                                <span>Dreaming...</span>
-                                                <span>{loadingProgress}%</span>
-                                            </div>
-                                            <Progress value={loadingProgress} className="h-2 bg-white/20" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
+                            <div className="w-full max-w-2xl aspect-square">
+                                <SkeletonLoader />
+                            </div>
                         )}
 
                         {generatedImages.length > 0 && (
-                            <motion.div
-                                className={cn("grid gap-6 w-full auto-rows-min", getGridClass(generatedImages.length))}
-                            >
-                                {generatedImages.map((imgUrl, index) => (
+                            <div className={cn(
+                                "grid gap-6 w-full",
+                                generatedImages.length === 1 ? "max-w-2xl" : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                            )}>
+                                {generatedImages.map((url, i) => (
                                     <motion.div
-                                        key={index}
+                                        key={url}
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
-                                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                                        className="relative group rounded-3xl overflow-hidden shadow-2xl shadow-primary/10 bg-white/40 backdrop-blur-md border border-white/60 p-2 transition-all hover:scale-[1.02] hover:shadow-primary/20 aspect-square"
+                                        transition={{ delay: i * 0.1 }}
+                                        className="relative group aspect-square rounded-3xl overflow-hidden border border-white/5 bg-zinc-900/40 shadow-2xl"
                                     >
-                                        <div className="w-full h-full relative rounded-2xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(imgUrl)}>
-                                            <img src={imgUrl} alt={`Generated ${index}`} className="w-full h-full object-cover" />
-                                            {/* Hover Overlay */}
-                                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
-                                                <a
-                                                    href={imgUrl}
-                                                    download={`ai-gen-${Date.now()}-${index}.png`}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="p-3 bg-white/90 text-foreground rounded-full shadow-lg hover:scale-110 transition-transform"
-                                                >
-                                                    <Download className="w-5 h-5" />
-                                                </a>
-                                                <button onClick={(e) => { e.stopPropagation(); setSelectedImage(imgUrl); }} className="p-3 bg-white/90 text-foreground rounded-full shadow-lg hover:scale-110 transition-transform">
-                                                    <Maximize2 className="w-5 h-5" />
-                                                </button>
-                                            </div>
+                                        <img src={url} className="w-full h-full object-cover cursor-pointer" onClick={() => setSelectedImage(url)} />
+                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                            <a href={url} download className="p-3 bg-white text-black rounded-full hover:scale-110 transition-transform">
+                                                <Download className="w-5 h-5" />
+                                            </a>
+                                            <button onClick={() => setSelectedImage(url)} className="p-3 bg-black/40 text-white rounded-full hover:scale-110 transition-transform backdrop-blur-md">
+                                                <Maximize2 className="w-5 h-5" />
+                                            </button>
                                         </div>
                                     </motion.div>
                                 ))}
-                            </motion.div>
+                            </div>
                         )}
 
                         {error && (
-                            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-red-50/80 backdrop-blur-md text-red-600 px-8 py-6 rounded-3xl border border-red-100 shadow-xl text-center self-center mx-auto">
-                                <div className="p-3 bg-red-100 rounded-full w-fit mx-auto mb-3"><X className="w-6 h-6 text-red-500" /></div>
-                                <h4 className="font-bold mb-1">Generation Failed</h4>
-                                <p className="text-sm opacity-90">{error}</p>
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 glass rounded-3xl text-center">
+                                <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-full mx-auto mb-4 flex items-center justify-center">
+                                    <Info className="w-6 h-6" />
+                                </div>
+                                <h3 className="font-bold text-red-500 mb-2">Generation Failed</h3>
+                                <p className="text-sm text-zinc-400">{error}</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
             </main>
 
-            {/* Lightbox / Fullscreen View */}
+            {/* Fullscreen Lightbox */}
             <AnimatePresence>
                 {selectedImage && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 lg:p-10"
+                        className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
                         onClick={() => setSelectedImage(null)}
                     >
                         <motion.img
-                            initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-                            src={selectedImage}
-                            className="max-h-full max-w-full rounded-2xl shadow-2xl"
-                            onClick={(e) => e.stopPropagation()}
+                            initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                            src={selectedImage} className="max-h-full max-w-full rounded-2xl shadow-3xl object-contain"
                         />
-                        <button className="absolute top-6 right-6 p-2 bg-white/10 text-white rounded-full hover:bg-white/20" onClick={() => setSelectedImage(null)}>
+                        <button className="absolute top-8 right-8 p-3 bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors" onClick={() => setSelectedImage(null)}>
                             <X className="w-6 h-6" />
                         </button>
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 4px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(255,255,255,0.05);
+                    border-radius: 10px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255,255,255,0.1);
+                }
+            `}</style>
         </div>
     );
 }

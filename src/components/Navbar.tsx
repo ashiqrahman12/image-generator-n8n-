@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Menu, Home, Library, LogOut, ArrowRight } from "lucide-react";
+import { Sparkles, Library, LogOut, ArrowRight, LayoutGrid, Zap } from "lucide-react";
 import { useGoogleLogin, googleLogout } from "@react-oauth/google";
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface GoogleUser {
     name: string;
@@ -15,13 +16,17 @@ interface GoogleUser {
 
 export function Navbar() {
     const [user, setUser] = useState<GoogleUser | null>(null);
+    const [scrolled, setScrolled] = useState(false);
 
-    // Check for persisted session on mount
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
     useEffect(() => {
         const storedUser = localStorage.getItem("googleUser");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
+        if (storedUser) setUser(JSON.parse(storedUser));
     }, []);
 
     const login = useGoogleLogin({
@@ -38,7 +43,6 @@ export function Navbar() {
                 console.error("Failed to fetch user info", error);
             }
         },
-        onError: () => console.log('Login Failed'),
     });
 
     const handleLogout = () => {
@@ -48,85 +52,88 @@ export function Navbar() {
     };
 
     return (
-        <nav className="h-16 border-b border-border bg-black/90 backdrop-blur-md sticky top-0 z-50 transition-colors">
-            <div className="h-full container mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8">
+        <header
+            className={cn(
+                "fixed top-0 left-0 right-0 z-[100] transition-all duration-300 px-4 py-4",
+                scrolled ? "py-3" : "py-5"
+            )}
+        >
+            <nav className={cn(
+                "max-w-7xl mx-auto h-14 px-4 rounded-2xl transition-all duration-300 flex items-center justify-between",
+                scrolled ? "glass shadow-2xl shadow-black/50 border-white/5" : "bg-transparent border-transparent"
+            )}>
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2.5 group">
-                    <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/25 group-hover:shadow-lg group-hover:shadow-primary/30 transition-shadow">
-                        <Sparkles className="h-5 w-5 text-white" />
+                <Link href="/" className="flex items-center gap-2 group">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:scale-110 transition-transform">
+                        <Sparkles className="h-4 w-4 text-black" />
                     </div>
-                    <span className="font-bold text-lg text-foreground tracking-tight">ImageGen</span>
+                    <span className="font-bold text-base text-white tracking-tight">Antigravity AI</span>
                 </Link>
 
                 {/* Nav Links - Desktop */}
-                <div className="hidden md:flex items-center gap-8">
-                    <Link href="/library" className="text-sm font-black text-white hover:text-primary transition-colors">
-                        Image Gallery
-                    </Link>
-                    <Link href="#" className="text-sm font-black text-white hover:text-primary transition-colors">
-                        Pricing
-                    </Link>
-                    <Link href="#" className="text-sm font-black text-white hover:text-primary transition-colors">
-                        API
-                    </Link>
+                <div className="hidden md:flex items-center gap-1">
+                    {[
+                        { name: "Create", href: "/", icon: Zap },
+                        { name: "Gallery", href: "/library", icon: LayoutGrid },
+                    ].map((item) => (
+                        <Link
+                            key={item.name}
+                            href={item.href}
+                            className="px-4 py-1.5 rounded-full text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all flex items-center gap-2"
+                        >
+                            <item.icon className="w-4 h-4" />
+                            {item.name}
+                        </Link>
+                    ))}
                 </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
                     {user ? (
-                        <div className="flex items-center gap-3">
-                            <div className="hidden sm:block text-right">
-                                <p className="text-xs font-black text-white">{user.name}</p>
-                                <p className="text-[10px] font-bold text-white/50">{user.email}</p>
-                            </div>
-                            <img src={user.picture} alt="Profile" className="w-9 h-9 rounded-full border border-white/20 shadow-sm" />
+                        <div className="flex items-center gap-3 bg-zinc-900/50 pl-3 pr-1 py-1 rounded-full border border-white/5">
+                            <span className="hidden sm:block text-xs font-medium text-zinc-300 mr-1">{user.name.split(' ')[0]}</span>
+                            <img src={user.picture} alt="Profile" className="w-7 h-7 rounded-full border border-white/10" />
                             <button
                                 onClick={handleLogout}
-                                className="p-2 text-white hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                title="Sign out"
+                                className="p-1.5 text-zinc-400 hover:text-white hover:bg-white/5 rounded-full transition-all"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <LogOut className="w-3.5 h-3.5" />
                             </button>
                         </div>
                     ) : (
-                        <motion.button
-                            whileHover="hover"
+                        <button
                             onClick={() => login()}
-                            className="relative group cursor-pointer"
+                            className="h-9 px-5 bg-white rounded-full text-black text-xs font-bold hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)]"
                         >
-                            <motion.div
-                                variants={{ hover: { opacity: 1, scale: 1.1 } }}
-                                initial={{ opacity: 0, scale: 0.8 }}
-                                className="absolute -inset-1 bg-primary/30 rounded-full blur-md"
-                            />
-                            <div className="relative relative px-6 py-2.5 bg-primary rounded-full text-white text-sm font-semibold shadow-lg shadow-primary/30 flex items-center gap-2 transition-transform active:scale-95">
-                                Get Started
-                                <motion.div variants={{ hover: { x: 4 } }}>
-                                    <ArrowRight className="w-4 h-4" />
-                                </motion.div>
-                            </div>
-                        </motion.button>
+                            Sign In
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
                     )}
                 </div>
-            </div>
+            </nav>
 
-            {/* Mobile Bottom Tab Bar - Floating Style */}
-            <div className="md:hidden fixed bottom-4 left-4 right-4 h-16 bg-white/90 backdrop-blur-xl border border-white/20 shadow-2xl rounded-2xl flex items-center justify-around z-[60] text-muted-foreground ring-1 ring-black/5">
-                <Link href="/" className="flex flex-col items-center gap-1 p-2 hover:text-primary transition-colors">
-                    <Home className="w-5 h-5" />
-                    <span className="text-[10px] font-medium">Home</span>
-                </Link>
-                <Link href="/" className="flex flex-col items-center gap-1 p-2 text-primary relative group">
-                    <div className="absolute -top-10 bg-primary w-14 h-14 rounded-full flex items-center justify-center shadow-lg shadow-primary/30 ring-4 ring-white transition-transform group-active:scale-95">
-                        <Sparkles className="w-6 h-6 text-white" />
+            {/* Mobile Bottom Navigation - Floating Glass */}
+            <AnimatePresence>
+                <motion.div
+                    initial={{ y: 100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] h-14 glass rounded-2xl flex items-center justify-around px-2 z-[100] shadow-2xl shadow-black/50"
+                >
+                    <Link href="/" className="flex flex-col items-center gap-1 p-2 text-zinc-400 hover:text-white transition-colors">
+                        <Zap className="w-5 h-5" />
+                        <span className="text-[10px] font-medium tracking-tight">Create</span>
+                    </Link>
+                    <div className="relative -top-4">
+                        <Link href="/" className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.4)] ring-4 ring-zinc-950 transition-transform active:scale-90">
+                            <Sparkles className="w-6 h-6 text-black" />
+                        </Link>
                     </div>
-                    <span className="text-[10px] font-medium font-bold mt-6">Generate</span>
-                </Link>
-                <Link href="/library" className="flex flex-col items-center gap-1 p-2 hover:text-primary transition-colors">
-                    <Library className="w-5 h-5" />
-                    <span className="text-[10px] font-medium">Library</span>
-                </Link>
-            </div>
-        </nav>
+                    <Link href="/library" className="flex flex-col items-center gap-1 p-2 text-zinc-400 hover:text-white transition-colors">
+                        <LayoutGrid className="w-5 h-5" />
+                        <span className="text-[10px] font-medium tracking-tight">Gallery</span>
+                    </Link>
+                </motion.div>
+            </AnimatePresence>
+        </header>
     );
 }
