@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Library, LogOut, ArrowRight, LayoutGrid, Zap, Menu, X, ChevronRight, Star, DollarSign, Info, Mail } from "lucide-react";
+import { Sparkles, Library, LogOut, ArrowRight, LayoutGrid, Zap, Menu, X, ChevronRight, Star, Info, Mail } from "lucide-react";
 import { useGoogleLogin, googleLogout } from "@react-oauth/google";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,9 +14,13 @@ interface GoogleUser {
     access_token?: string;
 }
 
+const BdtSymbol = ({ className }: { className?: string }) => (
+    <span className={cn("font-bold text-xl leading-none flex items-center justify-center pb-1", className)}>৳</span>
+);
+
 const navLinks = [
     { name: "Features", href: "/features", icon: Star },
-    { name: "Pricing", href: "/pricing", icon: DollarSign },
+    { name: "Pricing", href: "/pricing", icon: BdtSymbol },
     { name: "About", href: "/about", icon: Info },
     { name: "Contact", href: "/contact", icon: Mail },
 ];
