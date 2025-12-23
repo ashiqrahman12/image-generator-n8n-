@@ -23,7 +23,7 @@ export default function Home() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/20 blur-[120px] rounded-full pointer-events-none opacity-20" />
 
         {/* Hero Section */}
-        <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center text-center p-6 max-w-4xl mx-auto z-10 space-y-10">
+        <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center text-center p-6 pt-24 md:pt-6 max-w-4xl mx-auto z-10 space-y-10">
           {/* Badge - Hidden on Mobile */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
