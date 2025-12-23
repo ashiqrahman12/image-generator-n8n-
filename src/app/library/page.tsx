@@ -51,7 +51,7 @@ export default function LibraryPage() {
     return (
         <div className="min-h-screen bg-secondary/10 flex flex-col font-sans">
             <Navbar />
-            <main className="flex-1 container mx-auto px-4 py-8 mb-24 lg:mb-10">
+            <main className="flex-1 container mx-auto px-4 py-8 pt-24 mb-24 lg:mb-10">
                 {/* Background Pattern */}
                 <div className="fixed inset-0 opacity-30 pointer-events-none -z-10" style={{ backgroundImage: 'radial-gradient(#90AB8B 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
 
