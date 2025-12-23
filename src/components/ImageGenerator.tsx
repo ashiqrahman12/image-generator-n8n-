@@ -116,6 +116,21 @@ export function ImageGenerator() {
                 setTimeout(() => {
                     setGeneratedImages(data.imageUrls);
                     setLoading(false);
+
+                    // Save to localStorage for Gallery
+                    try {
+                        const existingHistory = JSON.parse(localStorage.getItem("imageHistory") || "[]");
+                        const newItems = data.imageUrls.map((url: string) => ({
+                            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                            image: url,
+                            prompt: prompt,
+                            timestamp: Date.now()
+                        }));
+                        const updatedHistory = [...newItems, ...existingHistory];
+                        localStorage.setItem("imageHistory", JSON.stringify(updatedHistory));
+                    } catch (e) {
+                        console.error("Failed to save to gallery:", e);
+                    }
                 }, 400);
             }
         } catch (err: any) {
