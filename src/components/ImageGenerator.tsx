@@ -126,14 +126,12 @@ export function ImageGenerator() {
     };
 
     return (
-        <div className="flex flex-col lg:flex-row h-dvh bg-background text-foreground overflow-hidden pt-16 md:pt-20">
-            {/* Control Sidebar (Desktop) / Mobile Shelf Wrapper */}
+        <div className="flex flex-col lg:flex-row min-h-screen bg-background text-foreground">
+            {/* Control Sidebar (Desktop) / Mobile Controls */}
             <aside className={cn(
-                "w-full lg:w-[420px] border-t lg:border-t-0 lg:border-r border-white/5 bg-zinc-950/20 backdrop-blur-2xl flex flex-col z-50 transition-all shadow-2xl shadow-black",
-                "fixed bottom-0 left-0 right-0 lg:static lg:h-full max-h-[85dvh] lg:max-h-full rounded-t-[32px] lg:rounded-none"
+                "w-full lg:w-[420px] lg:h-screen lg:sticky lg:top-0 border-t lg:border-t-0 lg:border-r border-white/5 bg-zinc-950/80 lg:bg-zinc-950/20 backdrop-blur-2xl flex flex-col z-40 transition-all shadow-2xl shadow-black"
             )}>
-                {/* Mobile Handle */}
-                <div className="lg:hidden w-12 h-1.5 bg-white/10 rounded-full mx-auto mt-4 mb-2" />
+
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 pb-32 lg:pb-40">
                     {/* Prompt Section - Always Visible */}
