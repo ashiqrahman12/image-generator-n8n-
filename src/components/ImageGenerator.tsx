@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2, Zap, Settings2, Info, Boxes } from "lucide-react";
+import { Sparkles, Loader2, Upload, X, Image as ImageIcon, Download, Share2, Monitor, ChevronDown, Mic, MicOff, Grid, Maximize2, Zap, Settings2, Info, Boxes, Layers, SlidersHorizontal, Ratio, Wand2, MinusCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { AccordionItem } from "@/components/ui/simple-accordion";
+import { SimpleSelect } from "@/components/ui/simple-select";
+import { SimpleSheet } from "@/components/ui/simple-sheet";
 
 // --- Premium UI Primitives ---
 const SkeletonLoader = () => (
@@ -43,6 +46,7 @@ const aspectRatioOptions = [
 
 export function ImageGenerator() {
     const [prompt, setPrompt] = useState("");
+    const [negativePrompt, setNegativePrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [loadingProgress, setLoadingProgress] = useState(0);
     const [generatedImages, setGeneratedImages] = useState<string[]>([]);
@@ -53,12 +57,12 @@ export function ImageGenerator() {
     const [outputFormat, setOutputFormat] = useState<"png" | "jpg">("png");
     const [refImages, setRefImages] = useState<{ file: File; preview: string }[]>([]);
     const [isListening, setIsListening] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false); // Mobile Settings Drawer
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const previewRef = useRef<HTMLElement>(null);
 
     const MAX_IMAGES = 4;
-    const MAX_SIZE_MB = 10;
 
     const handleVoiceInput = () => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -94,6 +98,7 @@ export function ImageGenerator() {
         try {
             const formData = new FormData();
             formData.append("prompt", prompt);
+            formData.append("negative_prompt", negativePrompt); // Added to API payload
             formData.append("quality", quality);
             formData.append("aspectRatio", aspectRatio);
             formData.append("outputFormat", outputFormat);
@@ -131,7 +136,7 @@ export function ImageGenerator() {
                 <div className="lg:hidden w-12 h-1.5 bg-white/10 rounded-full mx-auto mt-4 mb-2" />
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8 pb-32 lg:pb-40">
-                    {/* Prompt Section */}
+                    {/* Prompt Section - Always Visible */}
                     <div className="space-y-3">
                         <SectionLabel icon={Zap}>Prompt</SectionLabel>
                         <div className="group relative">
@@ -148,8 +153,14 @@ export function ImageGenerator() {
                                         <button onClick={handleVoiceInput} className={cn("p-2 rounded-lg transition-colors", isListening ? "bg-red-500/20 text-red-500 animate-pulse" : "text-white/70 hover:text-white hover:bg-white/5")}>
                                             <Mic className="w-4 h-4" />
                                         </button>
-                                        <button className="p-2 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-                                            <Sparkles className="w-4 h-4" />
+
+                                        {/* Mobile Settings Trigger */}
+                                        <button
+                                            onClick={() => setIsSettingsOpen(true)}
+                                            className="lg:hidden p-2 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                        >
+                                            <SlidersHorizontal className="w-4 h-4" />
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Settings</span>
                                         </button>
                                     </div>
                                     <span className="text-[11px] font-medium text-white/50 tracking-wide uppercase">{prompt.length} / 1000</span>
@@ -158,61 +169,74 @@ export function ImageGenerator() {
                         </div>
                     </div>
 
-                    {/* Reference Images */}
-                    <div className="space-y-4">
-                        <SectionLabel icon={Boxes}>Structure Reference</SectionLabel>
-                        <div className="grid grid-cols-4 gap-2">
-                            {refImages.map((img, i) => (
-                                <motion.div key={i} layoutId={`ref-${i}`} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group">
-                                    <img src={img.preview} className="w-full h-full object-cover" />
-                                    <button onClick={() => setRefImages(r => r.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </motion.div>
-                            ))}
-                            {refImages.length < MAX_IMAGES && (
-                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border border-dashed border-white/10 flex items-center justify-center hover:bg-white/5 hover:border-white/20 transition-all group">
-                                    <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300" />
-                                </button>
-                            )}
-                        </div>
-                        <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
-                        <p className="text-[10px] font-medium text-white/40 uppercase tracking-widest mt-2">{refImages.length} of {MAX_IMAGES} images</p>
-                    </div>
-
-                    {/* Configuration Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-6 pb-4">
-                        {/* Quality */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold text-white uppercase tracking-[0.2em]">Quality Level</label>
-                            <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/10">
-                                {qualityOptions.map((opt) => (
-                                    <button
-                                        key={opt.id}
-                                        onClick={() => setQuality(opt.id as any)}
-                                        className={cn(
-                                            "flex-1 py-2.5 text-[11px] font-bold rounded-lg transition-all tracking-tight uppercase",
-                                            quality === opt.id ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white"
-                                        )}
-                                    >
-                                        {opt.label}
-                                    </button>
-                                ))}
+                    {/* Desktop Settings | Mobile: Hidden in Sheet */}
+                    <div className="hidden lg:block space-y-6">
+                        {/* Negative Prompt */}
+                        <AccordionItem title="Negative Prompt">
+                            <div className="relative bg-zinc-900/50 border border-white/10 rounded-xl p-3 focus-within:border-white/20 transition-all">
+                                <div className="flex items-center gap-2 mb-2 text-white/50">
+                                    <MinusCircle className="w-3.5 h-3.5" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Avoid Content</span>
+                                </div>
+                                <textarea
+                                    value={negativePrompt}
+                                    onChange={(e) => setNegativePrompt(e.target.value)}
+                                    placeholder="blur, distortion, low quality..."
+                                    className="w-full h-16 bg-transparent border-none resize-none text-sm text-white placeholder:text-white/30 focus:ring-0 leading-relaxed custom-scrollbar"
+                                />
                             </div>
-                        </div>
+                        </AccordionItem>
 
-                        {/* Aspect Ratio */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold text-white uppercase tracking-[0.2em]">Aspect Ratio</label>
-                            <div className="relative">
-                                <select
+                        {/* Configuration */}
+                        <div className="space-y-6">
+                            {/* Reference Images */}
+                            <div className="space-y-3">
+                                <SectionLabel icon={Boxes}>Structure Reference</SectionLabel>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {refImages.map((img, i) => (
+                                        <motion.div key={i} layoutId={`ref-${i}`} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group">
+                                            <img src={img.preview} className="w-full h-full object-cover" />
+                                            <button onClick={() => setRefImages(r => r.filter((_, idx) => idx !== i))} className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </motion.div>
+                                    ))}
+                                    {refImages.length < MAX_IMAGES && (
+                                        <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border border-dashed border-white/10 flex items-center justify-center hover:bg-white/5 hover:border-white/20 transition-all group">
+                                            <Upload className="w-4 h-4 text-zinc-600 group-hover:text-zinc-300" />
+                                        </button>
+                                    )}
+                                </div>
+                                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileChange} />
+                            </div>
+
+                            {/* Aspect Ratio */}
+                            <div className="space-y-3">
+                                <SectionLabel icon={Ratio}>Aspect Ratio</SectionLabel>
+                                <SimpleSelect
                                     value={aspectRatio}
-                                    onChange={(e) => setAspectRatio(e.target.value as any)}
-                                    className="w-full h-12 bg-zinc-900/80 border border-white/10 rounded-xl px-4 text-sm font-medium text-white appearance-none focus:outline-none focus:border-white/30 transition-all cursor-pointer shadow-xl"
-                                >
-                                    {aspectRatioOptions.map(opt => <option key={opt.id} value={opt.id} className="bg-zinc-950">{opt.label}</option>)}
-                                </select>
-                                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none" />
+                                    onChange={(v) => setAspectRatio(v as any)}
+                                    options={aspectRatioOptions}
+                                />
+                            </div>
+
+                            {/* Quality */}
+                            <div className="space-y-3">
+                                <SectionLabel icon={Layers}>Quality Level</SectionLabel>
+                                <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/10">
+                                    {qualityOptions.map((opt) => (
+                                        <button
+                                            key={opt.id}
+                                            onClick={() => setQuality(opt.id as any)}
+                                            className={cn(
+                                                "flex-1 py-2 text-[10px] font-bold rounded-lg transition-all tracking-tight uppercase",
+                                                quality === opt.id ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white"
+                                            )}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -236,6 +260,74 @@ export function ImageGenerator() {
                     </button>
                 </div>
             </aside>
+
+            {/* Mobile Settings Sheet */}
+            <SimpleSheet isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Generation Settings">
+                <div className="space-y-8 pt-2">
+                    {/* Negative Prompt (Mobile) */}
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-2 text-white/50">
+                            <MinusCircle className="w-3.5 h-3.5" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">Avoid Content</span>
+                        </div>
+                        <textarea
+                            value={negativePrompt}
+                            onChange={(e) => setNegativePrompt(e.target.value)}
+                            placeholder="blur, distortion, low quality..."
+                            className="w-full h-20 bg-zinc-900/50 border border-white/10 rounded-xl p-3 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-white/30 resize-none"
+                        />
+                    </div>
+
+                    {/* Reference Images (Mobile) */}
+                    <div className="space-y-3">
+                        <SectionLabel icon={Boxes}>Structure Reference</SectionLabel>
+                        <div className="grid grid-cols-4 gap-2">
+                            {refImages.map((img, i) => (
+                                <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-white/10">
+                                    <img src={img.preview} className="w-full h-full object-cover" />
+                                    <button onClick={() => setRefImages(r => r.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-white">
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ))}
+                            {refImages.length < MAX_IMAGES && (
+                                <button onClick={() => fileInputRef.current?.click()} className="aspect-square rounded-xl border border-dashed border-white/10 flex items-center justify-center hover:bg-white/5">
+                                    <Upload className="w-4 h-4 text-zinc-600" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Aspect Ratio (Mobile) */}
+                    <div className="space-y-3">
+                        <SectionLabel icon={Ratio}>Aspect Ratio</SectionLabel>
+                        <SimpleSelect
+                            value={aspectRatio}
+                            onChange={(v) => setAspectRatio(v as any)}
+                            options={aspectRatioOptions}
+                        />
+                    </div>
+
+                    {/* Quality (Mobile) */}
+                    <div className="space-y-3">
+                        <SectionLabel icon={Layers}>Quality Level</SectionLabel>
+                        <div className="flex p-1 bg-zinc-900/50 rounded-xl border border-white/10">
+                            {qualityOptions.map((opt) => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => setQuality(opt.id as any)}
+                                    className={cn(
+                                        "flex-1 py-3 text-[10px] font-bold rounded-lg transition-all tracking-tight uppercase",
+                                        quality === opt.id ? "bg-white text-black shadow-lg" : "text-white/50 hover:text-white"
+                                    )}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </SimpleSheet>
 
             {/* Canvas Area */}
             <main ref={previewRef} className="flex-1 bg-zinc-950 relative overflow-y-auto custom-scrollbar pb-60 lg:pb-0">
