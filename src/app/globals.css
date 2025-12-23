@@ -89,17 +89,26 @@
 @layer base {
   * {
     @apply border-border outline-none;
+    box-sizing: border-box;
   }
 
   html {
     font-size: 17px;
     /* Increased from 16px */
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    overscroll-behavior: none;
   }
 
   body {
     @apply bg-background text-foreground font-sans selection:bg-white/20 selection:text-white;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    overflow-x: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    /* Native iOS scrolling */
+    touch-action: pan-y pinch-zoom;
+    /* Prevent horizontal swipe on body */
   }
 }
 
