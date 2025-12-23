@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Library, LogOut, ArrowRight, LayoutGrid, Zap } from "lucide-react";
+import { Sparkles, Library, LogOut, ArrowRight, LayoutGrid, Zap, Menu, X, ChevronRight, Star, DollarSign, Info, Mail } from "lucide-react";
 import { useGoogleLogin, googleLogout } from "@react-oauth/google";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,9 +14,17 @@ interface GoogleUser {
     access_token?: string;
 }
 
+const navLinks = [
+    { name: "Features", href: "/features", icon: Star },
+    { name: "Pricing", href: "/pricing", icon: DollarSign },
+    { name: "About", href: "/about", icon: Info },
+    { name: "Contact", href: "/contact", icon: Mail },
+];
+
 export function Navbar() {
     const [user, setUser] = useState<GoogleUser | null>(null);
     const [scrolled, setScrolled] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -29,6 +37,16 @@ export function Navbar() {
         if (storedUser) setUser(JSON.parse(storedUser));
     }, []);
 
+    // Lock body scroll when menu is open
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => { document.body.style.overflow = ''; };
+    }, [mobileMenuOpen]);
+
     const login = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
@@ -39,6 +57,7 @@ export function Navbar() {
                 const newUserData = { ...userInfo, access_token: tokenResponse.access_token };
                 setUser(newUserData);
                 localStorage.setItem("googleUser", JSON.stringify(newUserData));
+                setMobileMenuOpen(false);
             } catch (error) {
                 console.error("Failed to fetch user info", error);
             }
@@ -49,6 +68,7 @@ export function Navbar() {
         googleLogout();
         setUser(null);
         localStorage.removeItem("googleUser");
+        setMobileMenuOpen(false);
     };
 
     return (
@@ -62,6 +82,7 @@ export function Navbar() {
                 "max-w-7xl mx-auto h-14 px-4 rounded-2xl transition-all duration-300 flex items-center justify-between",
                 scrolled ? "glass shadow-2xl shadow-black/50 border-white/5" : "bg-transparent border-transparent"
             )}>
+                {/* Logo - Untouched */}
                 <Link href="/" className="flex items-center gap-2 group shrink-0">
                     <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:scale-110 transition-transform">
                         <Sparkles className="h-4 w-4 text-black" />
@@ -71,26 +92,29 @@ export function Navbar() {
 
                 {/* Nav Links - Desktop */}
                 <div className="hidden md:flex items-center gap-1">
-                    {[
-                        { name: "Create", href: "/", icon: Zap },
-                        { name: "Gallery", href: "/library", icon: LayoutGrid },
-                    ].map((item) => (
+                    {navLinks.map((item) => (
                         <Link
                             key={item.name}
                             href={item.href}
-                            className="px-5 py-2 rounded-full text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2.5"
+                            className="px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all"
                         >
-                            <item.icon className="w-4 h-4" />
                             {item.name}
                         </Link>
                     ))}
+                    <Link
+                        href="/library"
+                        className="px-4 py-2 rounded-full text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2"
+                    >
+                        <LayoutGrid className="w-4 h-4" />
+                        Gallery
+                    </Link>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-3">
+                {/* Desktop Actions */}
+                <div className="hidden md:flex items-center gap-3">
                     {user ? (
                         <div className="flex items-center gap-3 bg-white/10 pl-4 pr-1.5 py-1.5 rounded-full border border-white/20">
-                            <span className="hidden sm:block text-xs font-semibold text-white uppercase tracking-wider">{user.name.split(' ')[0]}</span>
+                            <span className="text-xs font-semibold text-white uppercase tracking-wider">{user.name.split(' ')[0]}</span>
                             <img src={user.picture} alt="Profile" className="w-8 h-8 rounded-full border border-white/30" />
                             <button
                                 onClick={handleLogout}
@@ -102,36 +126,167 @@ export function Navbar() {
                     ) : (
                         <button
                             onClick={() => login()}
-                            className="h-10 px-4 sm:px-6 bg-white rounded-full text-black text-[10px] sm:text-xs font-semibold uppercase tracking-wider sm:tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
+                            className="h-10 px-6 bg-white rounded-full text-black text-xs font-semibold uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
                         >
                             Sign In
-                            <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <ArrowRight className="w-4 h-4" />
                         </button>
                     )}
                 </div>
+
+                {/* Mobile Menu Button */}
+                <button
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="md:hidden p-2 text-white hover:bg-white/10 rounded-xl transition-colors"
+                    aria-label="Toggle menu"
+                >
+                    <AnimatePresence mode="wait">
+                        {mobileMenuOpen ? (
+                            <motion.div
+                                key="close"
+                                initial={{ rotate: -90, opacity: 0 }}
+                                animate={{ rotate: 0, opacity: 1 }}
+                                exit={{ rotate: 90, opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <X className="w-6 h-6" />
+                            </motion.div>
+                        ) : (
+                            <motion.div
+                                key="menu"
+                                initial={{ rotate: 90, opacity: 0 }}
+                                animate={{ rotate: 0, opacity: 1 }}
+                                exit={{ rotate: -90, opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                            >
+                                <Menu className="w-6 h-6" />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </button>
             </nav>
+
+            {/* Mobile Fullscreen Menu */}
+            <AnimatePresence>
+                {mobileMenuOpen && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className="md:hidden fixed inset-0 top-[72px] bg-zinc-950/98 backdrop-blur-xl z-[99] overflow-y-auto"
+                    >
+                        <div className="p-6 space-y-2">
+                            {/* Navigation Links */}
+                            {navLinks.map((item, index) => (
+                                <motion.div
+                                    key={item.name}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                >
+                                    <Link
+                                        href={item.href}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                                <item.icon className="w-5 h-5 text-white" />
+                                            </div>
+                                            <span className="text-lg font-semibold text-white">{item.name}</span>
+                                        </div>
+                                        <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                    </Link>
+                                </motion.div>
+                            ))}
+
+                            {/* Gallery Link */}
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: navLinks.length * 0.05 }}
+                            >
+                                <Link
+                                    href="/library"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                            <LayoutGrid className="w-5 h-5 text-white" />
+                                        </div>
+                                        <span className="text-lg font-semibold text-white">Gallery</span>
+                                    </div>
+                                    <ChevronRight className="w-5 h-5 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
+                                </Link>
+                            </motion.div>
+
+                            {/* Divider */}
+                            <div className="my-6 border-t border-white/10" />
+
+                            {/* Auth Section */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                {user ? (
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <img src={user.picture} alt="Profile" className="w-12 h-12 rounded-full border-2 border-white/20" />
+                                            <div>
+                                                <p className="font-semibold text-white">{user.name}</p>
+                                                <p className="text-sm text-white/50">{user.email}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full py-3 rounded-xl bg-red-500/20 text-red-400 font-semibold flex items-center justify-center gap-2 hover:bg-red-500/30 transition-colors"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        onClick={() => login()}
+                                        className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                                    >
+                                        Sign In
+                                        <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </motion.div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Mobile Bottom Navigation - Floating Glass */}
             <AnimatePresence>
-                <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] h-14 glass rounded-2xl flex items-center justify-around px-2 z-[100] shadow-2xl shadow-black/50"
-                >
-                    <Link href="/" className="flex flex-col items-center gap-1 p-2 text-zinc-400 hover:text-white transition-colors">
-                        <Zap className="w-5 h-5" />
-                        <span className="text-[10px] font-medium tracking-tight">Create</span>
-                    </Link>
-                    <div className="relative -top-4">
-                        <Link href="/" className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.4)] ring-4 ring-zinc-950 transition-transform active:scale-90">
-                            <Sparkles className="w-6 h-6 text-black" />
+                {!mobileMenuOpen && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] h-14 glass rounded-2xl flex items-center justify-around px-2 z-[100] shadow-2xl shadow-black/50"
+                    >
+                        <Link href="/" className="flex flex-col items-center gap-1 p-2 text-zinc-400 hover:text-white transition-colors">
+                            <Zap className="w-5 h-5" />
+                            <span className="text-[10px] font-medium tracking-tight">Create</span>
                         </Link>
-                    </div>
-                    <Link href="/library" className="flex flex-col items-center gap-1 p-2 text-zinc-400 hover:text-white transition-colors">
-                        <LayoutGrid className="w-5 h-5" />
-                        <span className="text-[10px] font-medium tracking-tight">Gallery</span>
-                    </Link>
-                </motion.div>
+                        <div className="relative -top-4">
+                            <Link href="/" className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,255,255,0.4)] ring-4 ring-zinc-950 transition-transform active:scale-90">
+                                <Sparkles className="w-6 h-6 text-black" />
+                            </Link>
+                        </div>
+                        <Link href="/library" className="flex flex-col items-center gap-1 p-2 text-zinc-400 hover:text-white transition-colors">
+                            <LayoutGrid className="w-5 h-5" />
+                            <span className="text-[10px] font-medium tracking-tight">Gallery</span>
+                        </Link>
+                    </motion.div>
+                )}
             </AnimatePresence>
         </header>
     );
