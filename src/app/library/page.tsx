@@ -58,7 +58,7 @@ export default function LibraryPage() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-foreground">Image Gallery</h1>
-                        <p className="text-muted">Your personal collection of AI creations</p>
+                        <p className="text-muted-foreground">Your personal collection of AI creations</p>
                     </div>
                     {history.length > 0 && (
                         <button
