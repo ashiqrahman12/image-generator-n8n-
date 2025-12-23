@@ -5,6 +5,7 @@ import { Navbar } from "@/components/Navbar";
 import { motion } from "framer-motion";
 import { Send, Mail, User, MessageSquare, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import emailjs from '@emailjs/browser';
 
 export default function ContactPage() {
     const [formData, setFormData] = useState({
@@ -22,15 +23,18 @@ export default function ContactPage() {
         setError(null);
 
         try {
-            const res = await fetch('/api/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData),
-            });
-
-            if (!res.ok) {
-                throw new Error('Failed to send message');
-            }
+            // EmailJS send email - client-side
+            await emailjs.send(
+                process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
+                process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+                {
+                    from_name: formData.fullName,
+                    from_email: formData.email,
+                    message: formData.details,
+                    to_name: 'Antigravity AI',
+                },
+                process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+            );
 
             setIsSubmitted(true);
             setFormData({ fullName: "", email: "", details: "" });
