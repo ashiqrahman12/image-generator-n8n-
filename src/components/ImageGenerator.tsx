@@ -91,7 +91,6 @@ export function ImageGenerator() {
         setLoadingProgress(0);
         setError(null);
         setGeneratedImages([]);
-        // Desktop: Close options if open to focus on result
         setShowOptionsDesktop(false);
 
         const interval = setInterval(() => {
@@ -120,7 +119,6 @@ export function ImageGenerator() {
                     setGeneratedImages(data.imageUrls);
                     setLoading(false);
 
-                    // Save to localStorage for Gallery
                     try {
                         const existingHistory = JSON.parse(localStorage.getItem("imageHistory") || "[]");
                         const newItems = data.imageUrls.map((url: string) => ({
@@ -146,207 +144,307 @@ export function ImageGenerator() {
     const hasImages = generatedImages.length > 0;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-64px)] md:h-[calc(100vh-72px)] bg-transparent text-foreground relative">
-            {/* Main Content Area */}
-            <main className="flex-1 overflow-y-auto custom-scrollbar relative px-4 pb-40 md:pb-32 pt-10">
-                {/* Hero / Empty State */}
-                <AnimatePresence mode="popLayout">
-                    {(!hasImages && !loading) && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -50 }}
-                            transition={{ duration: 0.5, ease: "circOut" }}
-                            className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-8 absolute inset-0 pointer-events-none"
-                        >
-                            {/* Ambient Glow */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 blur-[100px] rounded-full opacity-30 pointer-events-none" />
-
-                            {/* Content */}
-                            <div className="relative z-10 space-y-6 pointer-events-auto">
-                                <motion.div
-                                    initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-                                    className="w-24 h-24 bg-gradient-to-br from-zinc-800 to-zinc-950 rounded-3xl border border-white/10 flex items-center justify-center shadow-2xl mx-auto"
-                                >
-                                    <ImageIcon className="w-10 h-10 text-white/80" />
-                                </motion.div>
-                                <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
-                                    <span className="block text-white">Create Stunning</span>
-                                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">AI Artworks</span>
-                                </h1>
-                                <p className="text-zinc-400 max-w-lg mx-auto text-lg leading-relaxed">
-                                    Describe your vision and let our advanced AI models bring it to life in seconds.
-                                </p>
+        <>
+            {/* =========================================================
+                MOBILE LAYOUT (Strict Separation - Reverted Design) 
+                Only visible on < lg screens
+               ========================================================= */}
+            <div className="flex flex-col min-h-[85vh] bg-background text-foreground lg:hidden pb-24">
+                {/* Mobile: Controls Section (Top) */}
+                <div className="w-full bg-zinc-950/80 backdrop-blur-xl border-b border-white/5 z-40 p-5 space-y-4">
+                    <SectionLabel icon={Zap}>Prompt</SectionLabel>
+                    <div className="group relative">
+                        <div className="absolute -inset-0.5 bg-gradient-to-br from-white/10 to-white/0 rounded-2xl blur-sm opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                        <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-4 transition-all focus-within:border-white/20 focus-within:ring-1 focus-within:ring-white/10">
+                            <textarea
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="Describe what you want to create..."
+                                className="w-full h-24 bg-transparent border-none resize-none text-base font-normal text-white placeholder:text-white/40 focus:ring-0 leading-relaxed custom-scrollbar"
+                            />
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/10">
+                                <div className="flex gap-2">
+                                    <button onClick={handleVoiceInput} className={cn("p-2 rounded-lg transition-colors", isListening ? "bg-red-500/20 text-red-500 animate-pulse" : "text-white/70 hover:text-white hover:bg-white/5")}>
+                                        <Mic className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setIsSettingsOpen(true)}
+                                        className="p-2 text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors flex items-center gap-2"
+                                    >
+                                        <SlidersHorizontal className="w-4 h-4" />
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">Settings</span>
+                                    </button>
+                                </div>
+                                <span className="text-[11px] font-medium text-white/50 tracking-wide uppercase">{prompt.length} / 1000</span>
                             </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                        </div>
+                    </div>
+                </div>
 
-                {/* Results Grid - Bento Style */}
-                <div className="max-w-7xl mx-auto w-full relative z-10">
+                {/* Mobile: Results Area */}
+                <div className="flex-1 p-4 pb-24">
                     <AnimatePresence mode="wait">
-                        {loading && (
-                            <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="w-full max-w-2xl mx-auto aspect-square md:aspect-video"
-                            >
-                                <SkeletonLoader />
+                        {!hasImages && !loading && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12 text-zinc-500">
+                                <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/5 mx-auto mb-4 flex items-center justify-center">
+                                    <ImageIcon className="w-8 h-8 opacity-50" />
+                                </div>
+                                <p className="text-sm">Write a prompt to start dreaming.</p>
                             </motion.div>
                         )}
 
+                        {loading && (
+                            <div className="w-full aspect-square rounded-2xl overflow-hidden mb-4">
+                                <SkeletonLoader />
+                            </div>
+                        )}
+
                         {hasImages && (
-                            <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[300px]"
-                            >
+                            <div className="grid grid-cols-1 gap-4">
                                 {generatedImages.map((url, i) => (
                                     <motion.div
                                         key={url}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: i * 0.1 }}
-                                        className={cn(
-                                            "group relative rounded-3xl overflow-hidden border border-white/10 bg-zinc-900/40 shadow-2xl",
-                                            // Make first image span 2x2 if explicitly single or specific grid logic desired (simple grid for now)
-                                            generatedImages.length === 1 ? "md:col-span-2 md:row-span-2 md:aspect-square" : ""
-                                        )}
+                                        className="relative group aspect-square rounded-2xl overflow-hidden border border-white/10 bg-zinc-900 shadow-xl"
                                     >
-                                        <img src={url} className="w-full h-full object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105" onClick={() => setSelectedImage(url)} />
-
-                                        {/* Overlay Actions */}
-                                        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                            <a href={url} download className="p-3 bg-white text-black rounded-full hover:scale-110 transition-transform shadow-lg" title="Download">
-                                                <Download className="w-5 h-5" />
+                                        <img src={url} className="w-full h-full object-cover" onClick={() => setSelectedImage(url)} />
+                                        <div className="absolute top-2 right-2 flex gap-2">
+                                            <a href={url} download className="p-2 bg-black/50 text-white rounded-full backdrop-blur-md">
+                                                <Download className="w-4 h-4" />
                                             </a>
-                                            <button onClick={() => setSelectedImage(url)} className="p-3 bg-black/50 text-white rounded-full hover:scale-110 transition-transform backdrop-blur-md shadow-lg border border-white/20" title="View Fullscreen">
-                                                <Expand className="w-5 h-5" />
+                                            <button onClick={() => setSelectedImage(url)} className="p-2 bg-black/50 text-white rounded-full backdrop-blur-md">
+                                                <Maximize2 className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </motion.div>
                                 ))}
-                            </motion.div>
+                            </div>
                         )}
+
                         {error && (
-                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto p-6 bg-red-500/10 border border-red-500/20 rounded-3xl text-center">
-                                <Info className="w-8 h-8 text-red-500 mx-auto mb-3" />
-                                <p className="text-red-400 font-medium">{error}</p>
-                            </motion.div>
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm text-center">
+                                {error}
+                            </div>
                         )}
                     </AnimatePresence>
                 </div>
-            </main>
 
-            {/* Bottom Input Section - Desktop & Mobile Unified */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-10 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none">
-                <div className="max-w-4xl mx-auto pointer-events-auto">
-                    {/* Desktop Settings Panel (Collapsible) */}
-                    <AnimatePresence>
-                        {showOptionsDesktop && (
+                {/* Mobile: Sticky Generate Button */}
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-zinc-950/90 backdrop-blur-xl border-t border-white/10 z-50 pb-[env(safe-area-inset-bottom)+1rem]">
+                    <button
+                        onClick={handleGenerate}
+                        disabled={loading || !prompt.trim()}
+                        className={cn(
+                            "w-full h-12 rounded-xl font-bold text-sm uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-xl",
+                            loading ? "bg-zinc-800 text-white/50" : "bg-white text-black"
+                        )}
+                    >
+                        {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                        {loading ? "Dreaming..." : "Generate Image"}
+                    </button>
+                </div>
+            </div>
+
+            {/* =========================================================
+                DESKTOP LAYOUT (Strict Separation - New Design)
+                Only visible on >= lg screens
+               ========================================================= */}
+            <div className="hidden lg:flex flex-col h-[calc(100vh-72px)] bg-transparent text-foreground relative">
+                {/* Main Content Area */}
+                <main className="flex-1 overflow-y-auto custom-scrollbar relative px-4 pb-40 md:pb-32 pt-10">
+                    {/* Hero / Empty State */}
+                    <AnimatePresence mode="popLayout">
+                        {(!hasImages && !loading) && (
                             <motion.div
-                                initial={{ opacity: 0, y: 20, height: 0 }}
-                                animate={{ opacity: 1, y: 0, height: "auto" }}
-                                exit={{ opacity: 0, y: 20, height: 0 }}
-                                className="hidden lg:block mb-4 p-6 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -50 }}
+                                transition={{ duration: 0.5, ease: "circOut" }}
+                                className="flex flex-col items-center justify-center min-h-[50vh] text-center space-y-8 absolute inset-0 pointer-events-none"
                             >
-                                <div className="grid grid-cols-3 gap-8">
-                                    <div className="space-y-3">
-                                        <SectionLabel icon={Ratio}>Aspect Ratio</SectionLabel>
-                                        <SimpleSelect value={aspectRatio} onChange={(v) => setAspectRatio(v as any)} options={aspectRatioOptions} />
-                                    </div>
-                                    <div className="space-y-3">
-                                        <SectionLabel icon={Layers}>Quality</SectionLabel>
-                                        <div className="flex bg-zinc-800/50 rounded-xl p-1">
-                                            {qualityOptions.map((opt) => (
-                                                <button key={opt.id} onClick={() => setQuality(opt.id as any)} className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", quality === opt.id ? "bg-white text-black" : "text-zinc-400 hover:text-white")}>{opt.label}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <SectionLabel icon={MinusCircle}>Negative Prompt</SectionLabel>
-                                        <input
-                                            value={negativePrompt}
-                                            onChange={(e) => setNegativePrompt(e.target.value)}
-                                            placeholder="blur, distortion..."
-                                            className="w-full bg-zinc-800/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
-                                        />
-                                    </div>
+                                {/* Ambient Glow */}
+                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/10 blur-[100px] rounded-full opacity-30 pointer-events-none" />
+
+                                {/* Content */}
+                                <div className="relative z-10 space-y-6 pointer-events-auto">
+                                    <motion.div
+                                        initial={{ scale: 0.9 }} animate={{ scale: 1 }}
+                                        className="w-24 h-24 bg-gradient-to-br from-zinc-800 to-zinc-950 rounded-3xl border border-white/10 flex items-center justify-center shadow-2xl mx-auto"
+                                    >
+                                        <ImageIcon className="w-10 h-10 text-white/80" />
+                                    </motion.div>
+                                    <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight">
+                                        <span className="block text-white">Create Stunning</span>
+                                        <span className="block text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">AI Artworks</span>
+                                    </h1>
+                                    <p className="text-zinc-400 max-w-lg mx-auto text-lg leading-relaxed">
+                                        Describe your vision and let our advanced AI models bring it to life in seconds.
+                                    </p>
                                 </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    {/* Input Bar */}
-                    <div className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
-                        <div className="relative flex flex-col md:flex-row items-end gap-2 bg-zinc-900/90 border border-white/10 backdrop-blur-2xl p-3 rounded-[24px] shadow-2xl transition-all focus-within:border-white/20">
-                            {/* Mobile Settings Toggle */}
-                            <button
-                                onClick={() => setIsSettingsOpen(true)}
-                                className="lg:hidden p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/70 transition-colors"
-                            >
-                                <Settings2 className="w-5 h-5" />
-                            </button>
-
-                            {/* Desktop Settings Toggle */}
-                            <button
-                                onClick={() => setShowOptionsDesktop(!showOptionsDesktop)}
-                                className={cn(
-                                    "hidden lg:flex p-3 rounded-2xl transition-all items-center justify-center",
-                                    showOptionsDesktop ? "bg-white text-black" : "bg-white/5 hover:bg-white/10 text-white/70 hover:text-white"
-                                )}
-                                title="Advanced Settings"
-                            >
-                                <SlidersHorizontal className="w-5 h-5" />
-                            </button>
-
-                            {/* Text Input */}
-                            <textarea
-                                ref={inputRef}
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="Describe anything..."
-                                className="flex-1 min-h-[56px] max-h-32 bg-transparent border-none text-base md:text-lg text-white placeholder:text-white/30 focus:ring-0 leading-relaxed py-3 px-2 custom-scrollbar resize-none"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && !e.shiftKey) {
-                                        e.preventDefault();
-                                        handleGenerate();
-                                    }
-                                }}
-                            />
-
-                            {/* Actions Right */}
-                            <div className="flex items-center gap-2 pb-1">
-                                {/* Voice */}
-                                <button onClick={handleVoiceInput} className={cn("hidden md:flex p-3 rounded-full transition-colors", isListening ? "bg-red-500/20 text-red-500" : "hover:bg-white/5 text-white/60")}>
-                                    <Mic className="w-5 h-5" />
-                                </button>
-
-                                {/* Generate Button */}
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={loading || !prompt.trim()}
-                                    className={cn(
-                                        "h-12 px-6 md:px-8 rounded-xl font-bold text-sm md:text-base uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg",
-                                        loading || !prompt.trim()
-                                            ? "bg-zinc-800 text-white/30 cursor-not-allowed"
-                                            : "bg-white text-black hover:scale-105 active:scale-95 hover:shadow-white/20"
-                                    )}
+                    {/* Results Grid - Bento Style */}
+                    <div className="max-w-7xl mx-auto w-full relative z-10">
+                        <AnimatePresence mode="wait">
+                            {loading && (
+                                <motion.div
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="w-full max-w-2xl mx-auto aspect-square md:aspect-video"
                                 >
-                                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 fill-black" />}
-                                    <span className="hidden md:inline">{loading ? "Dreaming..." : "Generate"}</span>
+                                    <SkeletonLoader />
+                                </motion.div>
+                            )}
+
+                            {hasImages && (
+                                <motion.div
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[300px]"
+                                >
+                                    {generatedImages.map((url, i) => (
+                                        <motion.div
+                                            key={url}
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: i * 0.1 }}
+                                            className={cn(
+                                                "group relative rounded-3xl overflow-hidden border border-white/10 bg-zinc-900/40 shadow-2xl",
+                                                generatedImages.length === 1 ? "md:col-span-2 md:row-span-2 md:aspect-square" : ""
+                                            )}
+                                        >
+                                            <img src={url} className="w-full h-full object-cover cursor-pointer transition-transform duration-700 group-hover:scale-105" onClick={() => setSelectedImage(url)} />
+
+                                            {/* Overlay Actions */}
+                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                                <a href={url} download className="p-3 bg-white text-black rounded-full hover:scale-110 transition-transform shadow-lg" title="Download">
+                                                    <Download className="w-5 h-5" />
+                                                </a>
+                                                <button onClick={() => setSelectedImage(url)} className="p-3 bg-black/50 text-white rounded-full hover:scale-110 transition-transform backdrop-blur-md shadow-lg border border-white/20" title="View Fullscreen">
+                                                    <Expand className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </motion.div>
+                            )}
+                            {error && (
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto p-6 bg-red-500/10 border border-red-500/20 rounded-3xl text-center">
+                                    <Info className="w-8 h-8 text-red-500 mx-auto mb-3" />
+                                    <p className="text-red-400 font-medium">{error}</p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </main>
+
+                {/* Bottom Input Section - Desktop Only */}
+                <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 pt-10 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none">
+                    <div className="max-w-4xl mx-auto pointer-events-auto">
+                        {/* Desktop Settings Panel (Collapsible) */}
+                        <AnimatePresence>
+                            {showOptionsDesktop && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20, height: 0 }}
+                                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                                    exit={{ opacity: 0, y: 20, height: 0 }}
+                                    className="hidden lg:block mb-4 p-6 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden"
+                                >
+                                    <div className="grid grid-cols-3 gap-8">
+                                        <div className="space-y-3">
+                                            <SectionLabel icon={Ratio}>Aspect Ratio</SectionLabel>
+                                            <SimpleSelect value={aspectRatio} onChange={(v) => setAspectRatio(v as any)} options={aspectRatioOptions} />
+                                        </div>
+                                        <div className="space-y-3">
+                                            <SectionLabel icon={Layers}>Quality</SectionLabel>
+                                            <div className="flex bg-zinc-800/50 rounded-xl p-1">
+                                                {qualityOptions.map((opt) => (
+                                                    <button key={opt.id} onClick={() => setQuality(opt.id as any)} className={cn("flex-1 py-1.5 text-xs font-bold rounded-lg transition-all", quality === opt.id ? "bg-white text-black" : "text-zinc-400 hover:text-white")}>{opt.label}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <SectionLabel icon={MinusCircle}>Negative Prompt</SectionLabel>
+                                            <input
+                                                value={negativePrompt}
+                                                onChange={(e) => setNegativePrompt(e.target.value)}
+                                                placeholder="blur, distortion..."
+                                                className="w-full bg-zinc-800/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-white/30"
+                                            />
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        {/* Input Bar */}
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-[2rem] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
+                            <div className="relative flex flex-col md:flex-row items-end gap-2 bg-zinc-900/90 border border-white/10 backdrop-blur-2xl p-3 rounded-[24px] shadow-2xl transition-all focus-within:border-white/20">
+
+                                {/* Desktop Settings Toggle */}
+                                <button
+                                    onClick={() => setShowOptionsDesktop(!showOptionsDesktop)}
+                                    className={cn(
+                                        "p-3 rounded-2xl transition-all items-center justify-center bg-white/5 hover:bg-white/10 text-white/70 hover:text-white",
+                                        showOptionsDesktop ? "bg-white text-black" : ""
+                                    )}
+                                    title="Advanced Settings"
+                                >
+                                    <SlidersHorizontal className="w-5 h-5" />
                                 </button>
+
+                                {/* Text Input */}
+                                <textarea
+                                    ref={inputRef}
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    placeholder="Describe anything..."
+                                    className="flex-1 min-h-[56px] max-h-32 bg-transparent border-none text-base md:text-lg text-white placeholder:text-white/30 focus:ring-0 leading-relaxed py-3 px-2 custom-scrollbar resize-none"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleGenerate();
+                                        }
+                                    }}
+                                />
+
+                                {/* Actions Right */}
+                                <div className="flex items-center gap-2 pb-1">
+                                    {/* Voice */}
+                                    <button onClick={handleVoiceInput} className={cn("hidden md:flex p-3 rounded-full transition-colors", isListening ? "bg-red-500/20 text-red-500" : "hover:bg-white/5 text-white/60")}>
+                                        <Mic className="w-5 h-5" />
+                                    </button>
+
+                                    {/* Generate Button */}
+                                    <button
+                                        onClick={handleGenerate}
+                                        disabled={loading || !prompt.trim()}
+                                        className={cn(
+                                            "h-12 px-6 md:px-8 rounded-xl font-bold text-sm md:text-base uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg",
+                                            loading || !prompt.trim()
+                                                ? "bg-zinc-800 text-white/30 cursor-not-allowed"
+                                                : "bg-white text-black hover:scale-105 active:scale-95 hover:shadow-white/20"
+                                        )}
+                                    >
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5 fill-black" />}
+                                        <span className="hidden md:inline">{loading ? "Dreaming..." : "Generate"}</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Lightbox */}
+            {/* Lightbox - Shared */}
             <AnimatePresence>
                 {selectedImage && (
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-2xl flex items-center justify-center p-6"
+                        className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6"
                         onClick={() => setSelectedImage(null)}
                     >
                         <motion.img
@@ -366,9 +464,8 @@ export function ImageGenerator() {
                 )}
             </AnimatePresence>
 
-            {/* Mobile Settings Drawer (Unchanged Logic, Adjusted Style) */}
+            {/* Mobile Settings Drawer - Shared */}
             <SimpleSheet isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="Settings">
-                {/* Reusing existing mobile settings content structure... */}
                 <div className="space-y-8 pt-4">
                     <div className="space-y-3">
                         <SectionLabel icon={Ratio}>Aspect Ratio</SectionLabel>
@@ -388,6 +485,6 @@ export function ImageGenerator() {
                     </div>
                 </div>
             </SimpleSheet>
-        </div>
+        </>
     );
 }
