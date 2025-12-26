@@ -340,11 +340,11 @@ export function ImageGenerator() {
                                         e.stopPropagation();
                                         setShowAspectDropdown(!showAspectDropdown);
                                     }}
-                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 text-[11px] font-medium text-white/80 hover:bg-zinc-700/80 transition-colors"
+                                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-xs md:text-[11px] font-medium text-white/80 hover:bg-zinc-700/80 transition-colors"
                                 >
-                                    <Square className="w-3 h-3" />
+                                    <Square className="w-4 h-4 md:w-3 md:h-3" />
                                     {aspectRatio}
-                                    <ChevronDown className={cn("w-3 h-3 transition-transform", showAspectDropdown && "rotate-180")} />
+                                    <ChevronDown className={cn("w-4 h-4 md:w-3 md:h-3 transition-transform", showAspectDropdown && "rotate-180")} />
                                 </button>
 
                                 {showAspectDropdown && (
@@ -385,13 +385,13 @@ export function ImageGenerator() {
                             </div>
 
                             {/* Quality */}
-                            <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
+                            <div className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
                                 {qualityOptions.map((q) => (
                                     <button
                                         key={q}
                                         onClick={() => setQuality(q)}
                                         className={cn(
-                                            "px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
+                                            "px-2.5 py-1 rounded text-xs md:text-[11px] font-medium transition-colors",
                                             quality === q
                                                 ? "bg-purple-500/30 text-purple-300"
                                                 : "text-white/50 hover:text-white/80"
@@ -403,21 +403,21 @@ export function ImageGenerator() {
                             </div>
 
                             {/* Image Count */}
-                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
+                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
                                 <button
                                     onClick={() => setImageCount(Math.max(1, imageCount - 1))}
-                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30"
+                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30 p-0.5"
                                     disabled={imageCount <= 1}
                                 >
-                                    <Minus className="w-3 h-3" />
+                                    <Minus className="w-4 h-4 md:w-3 md:h-3" />
                                 </button>
-                                <span className="text-[11px] font-medium text-white/80 min-w-[20px] text-center">{imageCount}</span>
+                                <span className="text-xs md:text-[11px] font-medium text-white/80 min-w-[20px] text-center">{imageCount}</span>
                                 <button
                                     onClick={() => setImageCount(Math.min(4, imageCount + 1))}
-                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30"
+                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30 p-0.5"
                                     disabled={imageCount >= 4}
                                 >
-                                    <Plus className="w-3 h-3" />
+                                    <Plus className="w-4 h-4 md:w-3 md:h-3" />
                                 </button>
                             </div>
 
@@ -462,7 +462,7 @@ export function ImageGenerator() {
                                 onClick={handleGenerate}
                                 disabled={loading || !prompt.trim()}
                                 className={cn(
-                                    "px-3 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm flex items-center gap-1.5 md:gap-2 transition-all shrink-0",
+                                    "px-4 md:px-6 py-3 md:py-3 rounded-xl font-bold text-sm md:text-sm flex items-center gap-2 transition-all shrink-0",
                                     loading || !prompt.trim()
                                         ? "bg-zinc-700 text-white/50 cursor-not-allowed"
                                         : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 md:hover:scale-105"
@@ -470,13 +470,13 @@ export function ImageGenerator() {
                             >
                                 {loading ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" />
                                         <span className="hidden sm:inline">Generating...</span>
                                     </>
                                 ) : (
                                     <>
                                         <span className="hidden sm:inline">Generate</span>
-                                        <Sparkles className="w-4 h-4" />
+                                        <Sparkles className="w-5 h-5 md:w-4 md:h-4" />
                                     </>
                                 )}
                             </button>
