@@ -249,26 +249,27 @@ export function ImageGenerator() {
             </div>
 
             {/* Bottom Input Bar - Fixed */}
-            <div className="fixed bottom-0 left-0 right-0 p-3 md:p-6 pb-20 md:pb-6 bg-gradient-to-t from-background via-background to-transparent z-50">
+            <div className="fixed bottom-0 left-0 right-0 p-3 md:p-6 pb-24 md:pb-6 bg-gradient-to-t from-background via-background to-transparent z-50">
                 <div className="max-w-4xl mx-auto">
-                    <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl md:rounded-2xl p-2.5 md:p-3 shadow-2xl shadow-black/50">
+                    <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 md:p-4 shadow-2xl shadow-black/50">
+
                         {/* Reference Image Preview */}
                         {referenceImage && (
                             <div className="mb-3 flex items-center gap-3 p-2 bg-zinc-800/50 rounded-xl">
-                                <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/20">
+                                <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border border-white/20">
                                     <img
                                         src={referenceImage.preview}
                                         alt="Reference"
                                         className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-xs text-white/70 font-medium">Reference Image</p>
-                                    <p className="text-xs text-white/40 truncate">{referenceImage.file.name}</p>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-white/70 font-medium">Reference</p>
+                                    <p className="text-[10px] text-white/40 truncate">{referenceImage.file.name}</p>
                                 </div>
                                 <button
                                     onClick={removeReferenceImage}
-                                    className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                    className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
                                     title="Remove"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -285,72 +286,13 @@ export function ImageGenerator() {
                             className="hidden"
                         />
 
-                        {/* Input Row */}
-                        <div className="flex items-center gap-2 md:gap-3">
-                            <div className="flex items-center gap-2 flex-1 bg-zinc-800/50 rounded-xl px-4 py-3">
-                                {/* Upload Button */}
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className={cn(
-                                        "p-1.5 rounded-lg transition-all hover:scale-110",
-                                        referenceImage
-                                            ? "text-purple-400 bg-purple-500/20"
-                                            : "text-white/40 hover:text-white/70 hover:bg-white/10"
-                                    )}
-                                    title="Upload reference image"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                </button>
-                                <input
-                                    ref={inputRef}
-                                    type="text"
-                                    value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Describe the scene you imagine"
-                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm"
-                                    disabled={loading}
-                                />
-                            </div>
-
-                            {/* Generate Button */}
-                            <button
-                                onClick={handleGenerate}
-                                disabled={loading || !prompt.trim()}
-                                className={cn(
-                                    "px-4 md:px-6 py-2.5 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition-all shrink-0",
-                                    loading || !prompt.trim()
-                                        ? "bg-zinc-700 text-white/50 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 md:hover:scale-105"
-                                )}
-                            >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        Generate
-                                        <Sparkles className="w-4 h-4" />
-                                    </>
-                                )}
-                            </button>
-                        </div>
-
-                        {/* Controls Row - Hidden on small mobile */}
-                        <div className="hidden sm:flex items-center gap-2 mt-2 md:mt-3 flex-wrap">
-                            {/* Model Badge */}
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/80 border border-white/10 text-xs font-medium text-white/80">
-                                <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-[8px] font-bold">A</div>
-                                Antigravity Pro
-                            </div>
-
+                        {/* Controls Row - Always Visible */}
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
                             {/* Aspect Ratio */}
-                            <div className="relative">
+                            <div className="relative shrink-0">
                                 <button
                                     onClick={() => setShowAspectDropdown(!showAspectDropdown)}
-                                    className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/80 border border-white/10 text-xs font-medium text-white/80 hover:bg-zinc-700/80 transition-colors"
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 text-[11px] font-medium text-white/80 hover:bg-zinc-700/80 transition-colors"
                                 >
                                     <Square className="w-3 h-3" />
                                     {aspectRatio}
@@ -363,7 +305,7 @@ export function ImageGenerator() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: 10 }}
-                                            className="absolute bottom-full mb-2 left-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden min-w-[100px]"
+                                            className="absolute bottom-full mb-2 left-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden min-w-[90px] z-50"
                                         >
                                             {aspectRatios.map((ar) => (
                                                 <button
@@ -373,7 +315,7 @@ export function ImageGenerator() {
                                                         setShowAspectDropdown(false);
                                                     }}
                                                     className={cn(
-                                                        "w-full px-4 py-2 text-xs text-left flex items-center gap-2 transition-colors",
+                                                        "w-full px-3 py-2 text-xs text-left flex items-center gap-2 transition-colors",
                                                         aspectRatio === ar.value
                                                             ? "bg-purple-500/20 text-purple-400"
                                                             : "text-white/70 hover:bg-white/5"
@@ -389,15 +331,15 @@ export function ImageGenerator() {
                             </div>
 
                             {/* Quality */}
-                            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-zinc-800/80 border border-white/10">
+                            <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
                                 {qualityOptions.map((q) => (
                                     <button
                                         key={q}
                                         onClick={() => setQuality(q)}
                                         className={cn(
-                                            "px-2 py-0.5 rounded text-xs font-medium transition-colors",
+                                            "px-2 py-0.5 rounded text-[11px] font-medium transition-colors",
                                             quality === q
-                                                ? "bg-white/10 text-white"
+                                                ? "bg-purple-500/30 text-purple-300"
                                                 : "text-white/50 hover:text-white/80"
                                         )}
                                     >
@@ -407,29 +349,82 @@ export function ImageGenerator() {
                             </div>
 
                             {/* Image Count */}
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/80 border border-white/10">
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
                                 <button
                                     onClick={() => setImageCount(Math.max(1, imageCount - 1))}
-                                    className="text-white/50 hover:text-white transition-colors"
+                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30"
                                     disabled={imageCount <= 1}
                                 >
                                     <Minus className="w-3 h-3" />
                                 </button>
-                                <span className="text-xs font-medium text-white/80 min-w-[24px] text-center">{imageCount}/4</span>
+                                <span className="text-[11px] font-medium text-white/80 min-w-[20px] text-center">{imageCount}</span>
                                 <button
                                     onClick={() => setImageCount(Math.min(4, imageCount + 1))}
-                                    className="text-white/50 hover:text-white transition-colors"
+                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30"
                                     disabled={imageCount >= 4}
                                 >
                                     <Plus className="w-3 h-3" />
                                 </button>
                             </div>
 
-                            {/* Draw Mode */}
-                            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/80 border border-white/10 text-xs font-medium text-white/80">
-                                <Wand2 className="w-3 h-3" />
-                                Draw
+                            {/* Model Badge - Desktop only */}
+                            <div className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 text-[11px] font-medium text-white/80 shrink-0">
+                                <div className="w-3.5 h-3.5 rounded bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-[7px] font-bold">A</div>
+                                Antigravity Pro
                             </div>
+                        </div>
+
+                        {/* Input Row */}
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-1 bg-zinc-800/50 rounded-xl px-3 py-2.5 md:px-4 md:py-3">
+                                {/* Upload Button */}
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={cn(
+                                        "p-1 md:p-1.5 rounded-lg transition-all hover:scale-110 shrink-0",
+                                        referenceImage
+                                            ? "text-purple-400 bg-purple-500/20"
+                                            : "text-white/40 hover:text-white/70 hover:bg-white/10"
+                                    )}
+                                    title="Upload reference image"
+                                >
+                                    <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                                </button>
+                                <input
+                                    ref={inputRef}
+                                    type="text"
+                                    value={prompt}
+                                    onChange={(e) => setPrompt(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Describe the scene..."
+                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm min-w-0"
+                                    disabled={loading}
+                                />
+                            </div>
+
+                            {/* Generate Button */}
+                            <button
+                                onClick={handleGenerate}
+                                disabled={loading || !prompt.trim()}
+                                className={cn(
+                                    "px-3 md:px-6 py-2.5 md:py-3 rounded-xl font-bold text-xs md:text-sm flex items-center gap-1.5 md:gap-2 transition-all shrink-0",
+                                    loading || !prompt.trim()
+                                        ? "bg-zinc-700 text-white/50 cursor-not-allowed"
+                                        : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 md:hover:scale-105"
+                                )}
+                            >
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span className="hidden sm:inline">Generating...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="hidden sm:inline">Generate</span>
+                                        <Sparkles className="w-4 h-4" />
+                                    </>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>
