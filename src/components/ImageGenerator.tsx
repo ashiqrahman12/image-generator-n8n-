@@ -15,7 +15,9 @@ import {
     RectangleHorizontal,
     RectangleVertical,
     Minus,
-    ChevronDown
+    ChevronDown,
+    Upload,
+    Trash2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +26,11 @@ interface GeneratedImage {
     url: string;
     prompt: string;
     timestamp: number;
+}
+
+interface ReferenceImage {
+    file: File;
+    preview: string;
 }
 
 const aspectRatios = [
@@ -43,7 +50,27 @@ export function ImageGenerator() {
     const [quality, setQuality] = useState("1K");
     const [imageCount, setImageCount] = useState(1);
     const [showAspectDropdown, setShowAspectDropdown] = useState(false);
+    const [referenceImage, setReferenceImage] = useState<ReferenceImage | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && file.type.startsWith('image/')) {
+            const preview = URL.createObjectURL(file);
+            setReferenceImage({ file, preview });
+        }
+    };
+
+    const removeReferenceImage = () => {
+        if (referenceImage) {
+            URL.revokeObjectURL(referenceImage.preview);
+            setReferenceImage(null);
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     const handleGenerate = async () => {
         if (!prompt.trim() || loading) return;
@@ -215,10 +242,55 @@ export function ImageGenerator() {
             <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
                 <div className="max-w-4xl mx-auto">
                     <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl shadow-black/50">
+                        {/* Reference Image Preview */}
+                        {referenceImage && (
+                            <div className="mb-3 flex items-center gap-3 p-2 bg-zinc-800/50 rounded-xl">
+                                <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/20">
+                                    <img
+                                        src={referenceImage.preview}
+                                        alt="Reference"
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs text-white/70 font-medium">Reference Image</p>
+                                    <p className="text-xs text-white/40 truncate">{referenceImage.file.name}</p>
+                                </div>
+                                <button
+                                    onClick={removeReferenceImage}
+                                    className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                    title="Remove"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Hidden File Input */}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                        />
+
                         {/* Input Row */}
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-2 flex-1 bg-zinc-800/50 rounded-xl px-4 py-3">
-                                <Plus className="w-5 h-5 text-white/40" />
+                                {/* Upload Button */}
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className={cn(
+                                        "p-1.5 rounded-lg transition-all hover:scale-110",
+                                        referenceImage
+                                            ? "text-purple-400 bg-purple-500/20"
+                                            : "text-white/40 hover:text-white/70 hover:bg-white/10"
+                                    )}
+                                    title="Upload reference image"
+                                >
+                                    <Plus className="w-5 h-5" />
+                                </button>
                                 <input
                                     ref={inputRef}
                                     type="text"
