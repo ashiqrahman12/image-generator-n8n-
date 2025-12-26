@@ -19,7 +19,8 @@ import {
     Upload,
     Trash2,
     Mic,
-    MicOff
+    MicOff,
+    Palette
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,58 @@ const aspectRatios = [
 
 const qualityOptions = ["1K", "2K", "4K"];
 
+const stylePresets = [
+    {
+        category: "Professional",
+        styles: [
+            { label: "Studio Lighting", value: "studio lighting, clean background, perfect lighting, high details, ecommerce product photography" },
+            { label: "Product Photography", value: "product photography, depth of field, sharp focus, advertising look, commercial" },
+            { label: "Flat Lay", value: "flat lay photography, top-down view, objects arranged on surface, aesthetic layout" },
+            { label: "Minimalist", value: "minimalist style, simple, modern, solid color background, few elements, clean design" },
+            { label: "Corporate Headshot", value: "professional headshot, corporate portrait, blurred office background, business attire" },
+        ]
+    },
+    {
+        category: "Realistic",
+        styles: [
+            { label: "Cinematic", value: "cinematic style, movie-like color grading, dramatic lighting, wide angle, Hollywood quality" },
+            { label: "Natural Outdoor", value: "natural sunlight, outdoor scenery, realistic textures, golden hour, landscape photography" },
+            { label: "Analog Film", value: "analog film photography, grainy, faded colors, Kodak Portra look, vintage aesthetic" },
+            { label: "Macro", value: "macro photography, extreme close-up, intricate details, shallow depth of field" },
+            { label: "National Geographic", value: "National Geographic style, wildlife photography, nature documentary, high quality, detailed" },
+        ]
+    },
+    {
+        category: "Digital Art",
+        styles: [
+            { label: "3D Render", value: "3D render, Unreal Engine 5, hyper realistic, octane render, 8K, detailed" },
+            { label: "Isometric 3D", value: "isometric 3D view, game-like perspective, clean lines, miniature style" },
+            { label: "Cyberpunk", value: "cyberpunk style, neon lights, futuristic city, pink and blue tones, dystopian" },
+            { label: "Low Poly", value: "low poly art, polygonal shapes, minimalist 3D, geometric, game asset style" },
+            { label: "Claymorphism", value: "claymorphism, soft clay-like 3D, cute, pastel colors, rounded shapes, UI design" },
+        ]
+    },
+    {
+        category: "Artistic",
+        styles: [
+            { label: "Anime", value: "anime style, Japanese animation, Studio Ghibli inspired, Makoto Shinkai style, vibrant colors" },
+            { label: "Oil Painting", value: "oil painting style, Van Gogh inspired, visible brush strokes, classical art, textured" },
+            { label: "Watercolor", value: "watercolor painting, soft washes, artistic, delicate, flowing colors, paper texture" },
+            { label: "Pencil Sketch", value: "pencil sketch, black and white drawing, charcoal, hand-drawn, artistic" },
+            { label: "Vector Art", value: "vector art, flat design, clean lines, illustrator style, minimal, logo design" },
+            { label: "Pixel Art", value: "pixel art, retro video game style, 8-bit, 16-bit, nostalgic, game sprite" },
+        ]
+    },
+    {
+        category: "Fantasy",
+        styles: [
+            { label: "Steampunk", value: "steampunk style, Victorian era, mechanical, brass and copper tones, gears and cogs" },
+            { label: "Surrealism", value: "surrealism art, dreamlike, Salvador Dali inspired, impossible scenes, artistic" },
+            { label: "Dark Fantasy", value: "dark fantasy, Game of Thrones style, Lord of the Rings, mystic, epic, dramatic lighting" },
+        ]
+    }
+];
+
 export function ImageGenerator() {
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
@@ -57,6 +110,8 @@ export function ImageGenerator() {
     const [showAspectDropdown, setShowAspectDropdown] = useState(false);
     const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
     const [isListening, setIsListening] = useState(false);
+    const [selectedStyle, setSelectedStyle] = useState<string>("");
+    const [showStyleDropdown, setShowStyleDropdown] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -464,6 +519,85 @@ export function ImageGenerator() {
                                     <Mic className="w-4 h-4" />
                                 )}
                             </button>
+
+                            {/* Style Preset */}
+                            <div className="relative shrink-0">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowStyleDropdown(!showStyleDropdown);
+                                    }}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3 py-2 rounded-lg border text-xs md:text-[11px] font-medium transition-colors",
+                                        selectedStyle
+                                            ? "bg-purple-500/20 border-purple-500/50 text-purple-300"
+                                            : "bg-zinc-800/80 border-white/10 text-white/80 hover:bg-zinc-700/80"
+                                    )}
+                                >
+                                    <Palette className="w-4 h-4 md:w-3 md:h-3" />
+                                    <span className="hidden sm:inline max-w-[80px] truncate">
+                                        {selectedStyle || "Style"}
+                                    </span>
+                                    <ChevronDown className={cn("w-4 h-4 md:w-3 md:h-3 transition-transform", showStyleDropdown && "rotate-180")} />
+                                </button>
+
+                                {showStyleDropdown && (
+                                    <>
+                                        <div
+                                            className="fixed inset-0 z-[60]"
+                                            onClick={() => setShowStyleDropdown(false)}
+                                        />
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="absolute bottom-full mb-2 right-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden w-[280px] max-h-[350px] overflow-y-auto z-[70] shadow-xl"
+                                        >
+                                            {/* Clear Style Option */}
+                                            {selectedStyle && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedStyle("");
+                                                        setShowStyleDropdown(false);
+                                                    }}
+                                                    className="w-full px-3 py-2 text-xs text-left text-red-400 hover:bg-red-500/10 border-b border-white/10"
+                                                >
+                                                    ✕ Clear Style
+                                                </button>
+                                            )}
+                                            {stylePresets.map((category) => (
+                                                <div key={category.category}>
+                                                    <div className="px-3 py-2 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-zinc-800/50 sticky top-0">
+                                                        {category.category}
+                                                    </div>
+                                                    {category.styles.map((style) => (
+                                                        <button
+                                                            key={style.label}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedStyle(style.label);
+                                                                // Append style to prompt if not already there
+                                                                if (!prompt.includes(style.value)) {
+                                                                    setPrompt(prev => prev ? `${prev}, ${style.value}` : style.value);
+                                                                }
+                                                                setShowStyleDropdown(false);
+                                                            }}
+                                                            className={cn(
+                                                                "w-full px-3 py-2 text-xs text-left transition-colors",
+                                                                selectedStyle === style.label
+                                                                    ? "bg-purple-500/20 text-purple-300"
+                                                                    : "text-white/70 hover:bg-white/10"
+                                                            )}
+                                                        >
+                                                            {style.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    </>
+                                )}
+                            </div>
 
                             {/* Model Badge - Desktop only */}
                             <div className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 text-[11px] font-medium text-white/80 shrink-0">
