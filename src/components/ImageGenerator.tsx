@@ -152,18 +152,18 @@ export function ImageGenerator() {
     return (
         <div className="min-h-screen bg-background relative flex flex-col">
             {/* Hero Section - Centered */}
-            <div className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-40">
+            <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-6 pt-20 md:pt-24 pb-48 md:pb-40">
                 {/* Logo Icon */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     className="mb-8"
                 >
-                    <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center">
-                        <ImageIcon className="w-10 h-10 text-purple-400" />
-                        <Wand2 className="w-6 h-6 text-pink-400 absolute -top-1 -right-1" />
+                    <div className="relative w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center">
+                        <ImageIcon className="w-7 h-7 md:w-10 md:h-10 text-purple-400" />
+                        <Wand2 className="w-4 h-4 md:w-6 md:h-6 text-pink-400 absolute -top-1 -right-1" />
                         <div className="absolute -top-2 -right-2">
-                            <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                            <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-primary animate-pulse" />
                         </div>
                     </div>
                 </motion.div>
@@ -173,7 +173,7 @@ export function ImageGenerator() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="text-4xl md:text-6xl font-extrabold tracking-tight text-center mb-4"
+                    className="text-2xl sm:text-4xl md:text-6xl font-extrabold tracking-tight text-center mb-3 md:mb-4"
                 >
                     <span className="text-white">ANTIGRAVITY </span>
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-primary">AI</span>
@@ -249,9 +249,9 @@ export function ImageGenerator() {
             </div>
 
             {/* Bottom Input Bar - Fixed */}
-            <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background via-background to-transparent">
+            <div className="fixed bottom-0 left-0 right-0 p-3 md:p-6 pb-20 md:pb-6 bg-gradient-to-t from-background via-background to-transparent z-50">
                 <div className="max-w-4xl mx-auto">
-                    <div className="bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-2xl p-3 shadow-2xl shadow-black/50">
+                    <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl md:rounded-2xl p-2.5 md:p-3 shadow-2xl shadow-black/50">
                         {/* Reference Image Preview */}
                         {referenceImage && (
                             <div className="mb-3 flex items-center gap-3 p-2 bg-zinc-800/50 rounded-xl">
@@ -286,7 +286,7 @@ export function ImageGenerator() {
                         />
 
                         {/* Input Row */}
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3">
                             <div className="flex items-center gap-2 flex-1 bg-zinc-800/50 rounded-xl px-4 py-3">
                                 {/* Upload Button */}
                                 <button
@@ -318,10 +318,10 @@ export function ImageGenerator() {
                                 onClick={handleGenerate}
                                 disabled={loading || !prompt.trim()}
                                 className={cn(
-                                    "px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all",
+                                    "px-4 md:px-6 py-2.5 md:py-3 rounded-lg md:rounded-xl font-bold text-xs md:text-sm flex items-center gap-2 transition-all shrink-0",
                                     loading || !prompt.trim()
                                         ? "bg-zinc-700 text-white/50 cursor-not-allowed"
-                                        : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+                                        : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 md:hover:scale-105"
                                 )}
                             >
                                 {loading ? (
@@ -338,8 +338,8 @@ export function ImageGenerator() {
                             </button>
                         </div>
 
-                        {/* Controls Row */}
-                        <div className="flex items-center gap-2 mt-3 flex-wrap">
+                        {/* Controls Row - Hidden on small mobile */}
+                        <div className="hidden sm:flex items-center gap-2 mt-2 md:mt-3 flex-wrap">
                             {/* Model Badge */}
                             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-800/80 border border-white/10 text-xs font-medium text-white/80">
                                 <div className="w-4 h-4 rounded bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-[8px] font-bold">A</div>
