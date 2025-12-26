@@ -31,7 +31,10 @@ interface GeneratedImage {
 interface ReferenceImage {
     file: File;
     preview: string;
+    id: string;
 }
+
+const MAX_REFERENCE_IMAGES = 7;
 
 const aspectRatios = [
     { label: "1:1", value: "1:1", icon: Square },
@@ -50,23 +53,46 @@ export function ImageGenerator() {
     const [quality, setQuality] = useState("1K");
     const [imageCount, setImageCount] = useState(1);
     const [showAspectDropdown, setShowAspectDropdown] = useState(false);
-    const [referenceImage, setReferenceImage] = useState<ReferenceImage | null>(null);
+    const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file && file.type.startsWith('image/')) {
-            const preview = URL.createObjectURL(file);
-            setReferenceImage({ file, preview });
+        const files = e.target.files;
+        if (!files) return;
+
+        const remainingSlots = MAX_REFERENCE_IMAGES - referenceImages.length;
+        const filesToAdd = Array.from(files).slice(0, remainingSlots);
+
+        const newImages: ReferenceImage[] = filesToAdd
+            .filter(file => file.type.startsWith('image/'))
+            .map(file => ({
+                file,
+                preview: URL.createObjectURL(file),
+                id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            }));
+
+        setReferenceImages(prev => [...prev, ...newImages]);
+
+        // Reset input so same file can be selected again
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
         }
     };
 
-    const removeReferenceImage = () => {
-        if (referenceImage) {
-            URL.revokeObjectURL(referenceImage.preview);
-            setReferenceImage(null);
-        }
+    const removeReferenceImage = (id: string) => {
+        setReferenceImages(prev => {
+            const imageToRemove = prev.find(img => img.id === id);
+            if (imageToRemove) {
+                URL.revokeObjectURL(imageToRemove.preview);
+            }
+            return prev.filter(img => img.id !== id);
+        });
+    };
+
+    const clearAllReferenceImages = () => {
+        referenceImages.forEach(img => URL.revokeObjectURL(img.preview));
+        setReferenceImages([]);
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -84,13 +110,11 @@ export function ImageGenerator() {
             formData.append("aspectRatio", aspectRatio);
             formData.append("outputFormat", "png");
 
-            // Append reference image if selected
-            if (referenceImage) {
-                formData.append("referenceImage_0", referenceImage.file);
-                formData.append("referenceImageCount", "1");
-            } else {
-                formData.append("referenceImageCount", "0");
-            }
+            // Append reference images if selected
+            referenceImages.forEach((img, index) => {
+                formData.append(`referenceImage_${index}`, img.file);
+            });
+            formData.append("referenceImageCount", String(referenceImages.length));
 
             const res = await fetch("/api/generate", {
                 method: "POST",
@@ -253,27 +277,47 @@ export function ImageGenerator() {
                 <div className="max-w-4xl mx-auto">
                     <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 md:p-4 shadow-2xl shadow-black/50">
 
-                        {/* Reference Image Preview */}
-                        {referenceImage && (
-                            <div className="mb-3 flex items-center gap-3 p-2 bg-zinc-800/50 rounded-xl">
-                                <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-lg overflow-hidden border border-white/20">
-                                    <img
-                                        src={referenceImage.preview}
-                                        alt="Reference"
-                                        className="w-full h-full object-cover"
-                                    />
+                        {/* Reference Images Preview */}
+                        {referenceImages.length > 0 && (
+                            <div className="mb-3 p-2 bg-zinc-800/50 rounded-xl">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs text-white/70 font-medium">
+                                        Reference Images ({referenceImages.length}/{MAX_REFERENCE_IMAGES})
+                                    </p>
+                                    <button
+                                        onClick={clearAllReferenceImages}
+                                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                                    >
+                                        Clear all
+                                    </button>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-white/70 font-medium">Reference</p>
-                                    <p className="text-[10px] text-white/40 truncate">{referenceImage.file.name}</p>
+                                <div className="flex gap-2 overflow-x-auto pb-1">
+                                    {referenceImages.map((img) => (
+                                        <div key={img.id} className="relative shrink-0 group">
+                                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg overflow-hidden border border-white/20">
+                                                <img
+                                                    src={img.preview}
+                                                    alt="Reference"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={() => removeReferenceImage(img.id)}
+                                                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3 text-white" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {referenceImages.length < MAX_REFERENCE_IMAGES && (
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="w-12 h-12 md:w-14 md:h-14 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center text-white/40 hover:text-white/60 hover:border-white/40 transition-colors shrink-0"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                        </button>
+                                    )}
                                 </div>
-                                <button
-                                    onClick={removeReferenceImage}
-                                    className="p-2 text-white/50 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
-                                    title="Remove"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
                             </div>
                         )}
 
@@ -282,6 +326,7 @@ export function ImageGenerator() {
                             ref={fileInputRef}
                             type="file"
                             accept="image/*"
+                            multiple
                             onChange={handleFileSelect}
                             className="hidden"
                         />
@@ -391,11 +436,12 @@ export function ImageGenerator() {
                                     onClick={() => fileInputRef.current?.click()}
                                     className={cn(
                                         "p-1 md:p-1.5 rounded-lg transition-all hover:scale-110 shrink-0",
-                                        referenceImage
+                                        referenceImages.length > 0
                                             ? "text-purple-400 bg-purple-500/20"
                                             : "text-white/40 hover:text-white/70 hover:bg-white/10"
                                     )}
-                                    title="Upload reference image"
+                                    title={`Upload reference images (${referenceImages.length}/${MAX_REFERENCE_IMAGES})`}
+                                    disabled={referenceImages.length >= MAX_REFERENCE_IMAGES}
                                 >
                                     <Plus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
