@@ -287,47 +287,56 @@ export function ImageGenerator() {
                         />
 
                         {/* Controls Row - Always Visible */}
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-3 overflow-x-auto pb-1 scrollbar-hide">
+                        <div className="flex items-center gap-1.5 md:gap-2 mb-3 pb-1">
                             {/* Aspect Ratio */}
                             <div className="relative shrink-0">
                                 <button
-                                    onClick={() => setShowAspectDropdown(!showAspectDropdown)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowAspectDropdown(!showAspectDropdown);
+                                    }}
                                     className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 text-[11px] font-medium text-white/80 hover:bg-zinc-700/80 transition-colors"
                                 >
                                     <Square className="w-3 h-3" />
                                     {aspectRatio}
-                                    <ChevronDown className="w-3 h-3" />
+                                    <ChevronDown className={cn("w-3 h-3 transition-transform", showAspectDropdown && "rotate-180")} />
                                 </button>
 
-                                <AnimatePresence>
-                                    {showAspectDropdown && (
+                                {showAspectDropdown && (
+                                    <>
+                                        {/* Backdrop to close dropdown */}
+                                        <div
+                                            className="fixed inset-0 z-[60]"
+                                            onClick={() => setShowAspectDropdown(false)}
+                                        />
+                                        {/* Dropdown Menu */}
                                         <motion.div
-                                            initial={{ opacity: 0, y: 10 }}
+                                            initial={{ opacity: 0, y: 5 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: 10 }}
-                                            className="absolute bottom-full mb-2 left-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden min-w-[90px] z-50"
+                                            className="absolute bottom-full mb-2 left-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden min-w-[100px] z-[70] shadow-xl"
                                         >
                                             {aspectRatios.map((ar) => (
                                                 <button
                                                     key={ar.value}
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setAspectRatio(ar.value);
                                                         setShowAspectDropdown(false);
                                                     }}
                                                     className={cn(
-                                                        "w-full px-3 py-2 text-xs text-left flex items-center gap-2 transition-colors",
+                                                        "w-full px-3 py-2.5 text-xs text-left flex items-center gap-2 transition-colors",
                                                         aspectRatio === ar.value
                                                             ? "bg-purple-500/20 text-purple-400"
-                                                            : "text-white/70 hover:bg-white/5"
+                                                            : "text-white/70 hover:bg-white/10"
                                                     )}
                                                 >
-                                                    <ar.icon className="w-3 h-3" />
+                                                    <ar.icon className="w-3.5 h-3.5" />
                                                     {ar.label}
                                                 </button>
                                             ))}
                                         </motion.div>
-                                    )}
-                                </AnimatePresence>
+                                    </>
+                                )}
                             </div>
 
                             {/* Quality */}
