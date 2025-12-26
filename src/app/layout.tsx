@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const roboto = Roboto({
   weight: ['400', '500', '700'],
@@ -28,18 +28,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#09090b" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-      </head>
-      <body className={`${roboto.variable} ${playfair.variable} antialiased bg-background text-foreground overflow-x-hidden`}>
-        <GoogleOAuthProvider clientId="204783801813-ak9hl515i8n91k52kcpak6meadbd9ejk.apps.googleusercontent.com">
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning className="overflow-x-hidden">
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+          <meta name="theme-color" content="#09090b" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        </head>
+        <body className={`${roboto.variable} ${playfair.variable} antialiased bg-background text-foreground overflow-x-hidden`}>
           {children}
-        </GoogleOAuthProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

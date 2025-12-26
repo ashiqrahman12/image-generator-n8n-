@@ -1,18 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, Library, LogOut, ArrowRight, LayoutGrid, Zap, Menu, X, ChevronRight, Star, Info, Mail } from "lucide-react";
-import { useGoogleLogin, googleLogout } from "@react-oauth/google";
+import { Sparkles, LayoutGrid, Zap, Menu, X, ChevronRight, Star, Info, Mail, ArrowRight } from "lucide-react";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-
-interface GoogleUser {
-    name: string;
-    picture: string;
-    email: string;
-    access_token?: string;
-}
 
 const BdtSymbol = ({ className }: { className?: string }) => (
     <span className={cn("font-bold text-xl leading-none flex items-center justify-center pb-1", className)}>৳</span>
@@ -26,7 +19,6 @@ const navLinks = [
 ];
 
 export function Navbar() {
-    const [user, setUser] = useState<GoogleUser | null>(null);
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -34,11 +26,6 @@ export function Navbar() {
         const handleScroll = () => setScrolled(window.scrollY > 20);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
-
-    useEffect(() => {
-        const storedUser = localStorage.getItem("googleUser");
-        if (storedUser) setUser(JSON.parse(storedUser));
     }, []);
 
     // Lock body scroll when menu is open
@@ -51,30 +38,6 @@ export function Navbar() {
         return () => { document.body.style.overflow = ''; };
     }, [mobileMenuOpen]);
 
-    const login = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            try {
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const userInfo = await res.json();
-                const newUserData = { ...userInfo, access_token: tokenResponse.access_token };
-                setUser(newUserData);
-                localStorage.setItem("googleUser", JSON.stringify(newUserData));
-                setMobileMenuOpen(false);
-            } catch (error) {
-                console.error("Failed to fetch user info", error);
-            }
-        },
-    });
-
-    const handleLogout = () => {
-        googleLogout();
-        setUser(null);
-        localStorage.removeItem("googleUser");
-        setMobileMenuOpen(false);
-    };
-
     return (
         <header
             className={cn(
@@ -86,7 +49,7 @@ export function Navbar() {
                 "max-w-7xl mx-auto h-14 px-4 rounded-2xl transition-all duration-300 flex items-center justify-between",
                 scrolled ? "glass shadow-2xl shadow-black/50 border-white/5" : "bg-transparent border-transparent"
             )}>
-                {/* Logo - Untouched */}
+                {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 group shrink-0">
                     <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.3)] group-hover:scale-110 transition-transform">
                         <Sparkles className="h-4 w-4 text-black" />
@@ -114,28 +77,26 @@ export function Navbar() {
                     </Link>
                 </div>
 
-                {/* Desktop Actions */}
+                {/* Desktop Actions - Clerk Auth */}
                 <div className="hidden md:flex items-center gap-3">
-                    {user ? (
-                        <div className="flex items-center gap-3 bg-white/10 pl-4 pr-1.5 py-1.5 rounded-full border border-white/20">
-                            <span className="text-xs font-semibold text-white uppercase tracking-wider">{user.name.split(' ')[0]}</span>
-                            <img src={user.picture} alt="Profile" className="w-8 h-8 rounded-full border border-white/30" />
-                            <button
-                                onClick={handleLogout}
-                                className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-all"
-                            >
-                                <LogOut className="w-4 h-4" />
+                    <SignedOut>
+                        <SignInButton mode="modal">
+                            <button className="h-10 px-6 bg-white rounded-full text-black text-xs font-semibold uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]">
+                                Sign In
+                                <ArrowRight className="w-4 h-4" />
                             </button>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={() => login()}
-                            className="h-10 px-6 bg-white rounded-full text-black text-xs font-semibold uppercase tracking-[0.15em] hover:bg-zinc-200 transition-all flex items-center gap-2 active:scale-95 shadow-[0_0_25px_rgba(255,255,255,0.2)]"
-                        >
-                            Sign In
-                            <ArrowRight className="w-4 h-4" />
-                        </button>
-                    )}
+                        </SignInButton>
+                    </SignedOut>
+                    <SignedIn>
+                        <UserButton
+                            afterSignOutUrl="/"
+                            appearance={{
+                                elements: {
+                                    avatarBox: "w-10 h-10 border-2 border-white/30 rounded-full"
+                                }
+                            }}
+                        />
+                    </SignedIn>
                 </div>
 
                 {/* Mobile Menu Button */}
@@ -229,38 +190,36 @@ export function Navbar() {
                             {/* Divider */}
                             <div className="my-6 border-t border-white/10" />
 
-                            {/* Auth Section */}
+                            {/* Auth Section - Clerk */}
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
                             >
-                                {user ? (
-                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                                        <div className="flex items-center gap-4 mb-4">
-                                            <img src={user.picture} alt="Profile" className="w-12 h-12 rounded-full border-2 border-white/20" />
-                                            <div>
-                                                <p className="font-semibold text-white">{user.name}</p>
-                                                <p className="text-sm text-white/50">{user.email}</p>
-                                            </div>
-                                        </div>
+                                <SignedOut>
+                                    <SignInButton mode="modal">
                                         <button
-                                            onClick={handleLogout}
-                                            className="w-full py-3 rounded-xl bg-red-500/20 text-red-400 font-semibold flex items-center justify-center gap-2 hover:bg-red-500/30 transition-colors"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                            className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.2)]"
                                         >
-                                            <LogOut className="w-4 h-4" />
-                                            Sign Out
+                                            Sign In
+                                            <ArrowRight className="w-5 h-5" />
                                         </button>
+                                    </SignInButton>
+                                </SignedOut>
+                                <SignedIn>
+                                    <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                        <span className="text-white font-semibold">My Account</span>
+                                        <UserButton
+                                            afterSignOutUrl="/"
+                                            appearance={{
+                                                elements: {
+                                                    avatarBox: "w-12 h-12 border-2 border-white/20 rounded-full"
+                                                }
+                                            }}
+                                        />
                                     </div>
-                                ) : (
-                                    <button
-                                        onClick={() => login()}
-                                        className="w-full py-4 rounded-2xl bg-white text-black font-bold text-lg flex items-center justify-center gap-3 hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-                                    >
-                                        Sign In
-                                        <ArrowRight className="w-5 h-5" />
-                                    </button>
-                                )}
+                                </SignedIn>
                             </motion.div>
                         </div>
                     </motion.div>
