@@ -17,7 +17,9 @@ import {
     Minus,
     ChevronDown,
     Upload,
-    Trash2
+    Trash2,
+    Mic,
+    MicOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +56,51 @@ export function ImageGenerator() {
     const [imageCount, setImageCount] = useState(1);
     const [showAspectDropdown, setShowAspectDropdown] = useState(false);
     const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
+    const [isListening, setIsListening] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const recognitionRef = useRef<any>(null);
+
+    // Voice recognition handler
+    const toggleVoiceInput = () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Voice recognition is not supported in your browser');
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current?.stop();
+            setIsListening(false);
+            return;
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const win = window as any;
+        const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognitionRef.current = recognition;
+
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        recognition.onstart = () => setIsListening(true);
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        recognition.onresult = (event: any) => {
+            const transcript = Array.from(event.results)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                .map((result: any) => result[0].transcript)
+                .join('');
+            setPrompt(transcript);
+        };
+
+        recognition.onerror = () => setIsListening(false);
+        recognition.onend = () => setIsListening(false);
+
+        recognition.start();
+    };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -402,24 +447,23 @@ export function ImageGenerator() {
                                 ))}
                             </div>
 
-                            {/* Image Count */}
-                            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 shrink-0">
-                                <button
-                                    onClick={() => setImageCount(Math.max(1, imageCount - 1))}
-                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30 p-0.5"
-                                    disabled={imageCount <= 1}
-                                >
-                                    <Minus className="w-4 h-4 md:w-3 md:h-3" />
-                                </button>
-                                <span className="text-xs md:text-[11px] font-medium text-white/80 min-w-[20px] text-center">{imageCount}</span>
-                                <button
-                                    onClick={() => setImageCount(Math.min(4, imageCount + 1))}
-                                    className="text-white/50 hover:text-white transition-colors disabled:opacity-30 p-0.5"
-                                    disabled={imageCount >= 4}
-                                >
-                                    <Plus className="w-4 h-4 md:w-3 md:h-3" />
-                                </button>
-                            </div>
+                            {/* Voice Command - Mobile Only */}
+                            <button
+                                onClick={toggleVoiceInput}
+                                className={cn(
+                                    "md:hidden flex items-center gap-2 px-3 py-2 rounded-lg border shrink-0 transition-all",
+                                    isListening
+                                        ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
+                                        : "bg-zinc-800/80 border-white/10 text-white/80 hover:bg-zinc-700/80"
+                                )}
+                                title={isListening ? "Stop listening" : "Voice input"}
+                            >
+                                {isListening ? (
+                                    <MicOff className="w-4 h-4" />
+                                ) : (
+                                    <Mic className="w-4 h-4" />
+                                )}
+                            </button>
 
                             {/* Model Badge - Desktop only */}
                             <div className="hidden md:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-zinc-800/80 border border-white/10 text-[11px] font-medium text-white/80 shrink-0">
