@@ -640,7 +640,7 @@ export function ImageGenerator() {
                                 onClick={handleGenerate}
                                 disabled={loading || !prompt.trim()}
                                 className={cn(
-                                    "px-4 md:px-6 py-3 md:py-3 rounded-xl font-bold text-sm md:text-sm flex items-center gap-2 transition-all shrink-0",
+                                    "px-4 md:px-6 py-3 md:py-3 rounded-2xl font-bold text-sm md:text-sm flex items-center gap-2 transition-all shrink-0",
                                     loading || !prompt.trim()
                                         ? "bg-zinc-700 text-white/50 cursor-not-allowed"
                                         : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 md:hover:scale-105"
@@ -648,13 +648,13 @@ export function ImageGenerator() {
                             >
                                 {loading ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 md:w-4 md:h-4 animate-spin" />
+                                        <Loader2 className="w-6 h-6 md:w-5 md:h-5 animate-spin" />
                                         <span className="hidden sm:inline">Generating...</span>
                                     </>
                                 ) : (
                                     <>
                                         <span className="hidden sm:inline">Generate</span>
-                                        <Sparkles className="w-5 h-5 md:w-4 md:h-4" />
+                                        <ImageIcon className="w-6 h-6 md:w-5 md:h-5" />
                                     </>
                                 )}
                             </button>
