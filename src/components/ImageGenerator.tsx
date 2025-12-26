@@ -534,11 +534,11 @@ export function ImageGenerator() {
                                             : "bg-zinc-800/80 border-white/10 text-white/80 hover:bg-zinc-700/80"
                                     )}
                                 >
-                                    <Palette className="w-4 h-4 md:w-3 md:h-3" />
-                                    <span className="hidden sm:inline max-w-[80px] truncate">
+                                    <Palette className="w-4 h-4" />
+                                    <span className="hidden md:inline max-w-[80px] truncate">
                                         {selectedStyle || "Style"}
                                     </span>
-                                    <ChevronDown className={cn("w-4 h-4 md:w-3 md:h-3 transition-transform", showStyleDropdown && "rotate-180")} />
+                                    <ChevronDown className={cn("hidden md:block w-3 h-3 transition-transform", showStyleDropdown && "rotate-180")} />
                                 </button>
 
                                 {showStyleDropdown && (
