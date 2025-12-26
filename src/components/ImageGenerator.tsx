@@ -452,7 +452,7 @@ export function ImageGenerator() {
                                     onChange={(e) => setPrompt(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Describe the scene..."
-                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-sm min-w-0"
+                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-base md:text-sm min-w-0"
                                     disabled={loading}
                                 />
                             </div>
