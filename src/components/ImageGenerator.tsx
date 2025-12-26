@@ -77,14 +77,24 @@ export function ImageGenerator() {
         setLoading(true);
 
         try {
+            // Build FormData for API (matches what route.ts expects)
+            const formData = new FormData();
+            formData.append("prompt", prompt);
+            formData.append("quality", quality.toLowerCase());
+            formData.append("aspectRatio", aspectRatio);
+            formData.append("outputFormat", "png");
+
+            // Append reference image if selected
+            if (referenceImage) {
+                formData.append("referenceImage_0", referenceImage.file);
+                formData.append("referenceImageCount", "1");
+            } else {
+                formData.append("referenceImageCount", "0");
+            }
+
             const res = await fetch("/api/generate", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    prompt,
-                    aspectRatio,
-                    numberOfImages: imageCount
-                }),
+                body: formData, // FormData auto-sets Content-Type with boundary
             });
             const data = await res.json();
 
