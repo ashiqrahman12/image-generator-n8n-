@@ -654,7 +654,7 @@ export function ImageGenerator() {
                                 ) : (
                                     <>
                                         <span className="hidden sm:inline">Generate</span>
-                                        <ImageIcon className="w-6 h-6 md:w-5 md:h-5" />
+                                        <Wand2 className="w-6 h-6 md:w-5 md:h-5" />
                                     </>
                                 )}
                             </button>
