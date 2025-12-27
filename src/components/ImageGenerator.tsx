@@ -540,57 +540,77 @@ export function ImageGenerator() {
 
                                 {showStyleDropdown && (
                                     <>
+                                        {/* Backdrop */}
                                         <div
-                                            className="fixed inset-0 z-[60]"
+                                            className="fixed inset-0 z-[60] bg-black/50 md:bg-transparent"
                                             onClick={() => setShowStyleDropdown(false)}
                                         />
+                                        {/* Mobile: Bottom Sheet | Desktop: Dropdown */}
                                         <motion.div
-                                            initial={{ opacity: 0, y: 5 }}
+                                            initial={{ opacity: 0, y: 20 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="absolute bottom-full mb-2 left-0 md:left-auto md:right-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden w-[280px] max-w-[calc(100vw-2rem)] max-h-[350px] overflow-y-auto z-[70] shadow-xl"
-                                        >
-                                            {/* Clear Style Option */}
-                                            {selectedStyle && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setSelectedStyle("");
-                                                        setShowStyleDropdown(false);
-                                                    }}
-                                                    className="w-full px-3 py-2 text-xs text-left text-red-400 hover:bg-red-500/10 border-b border-white/10"
-                                                >
-                                                    ✕ Clear Style
-                                                </button>
+                                            className={cn(
+                                                "bg-zinc-900 border border-white/10 overflow-hidden z-[70] shadow-xl",
+                                                // Mobile: Fixed bottom sheet
+                                                "fixed inset-x-4 bottom-4 rounded-2xl max-h-[70vh]",
+                                                // Desktop: Absolute dropdown
+                                                "md:absolute md:inset-auto md:bottom-full md:mb-2 md:right-0 md:w-[280px] md:max-h-[350px] md:rounded-xl"
                                             )}
-                                            {stylePresets.map((category) => (
-                                                <div key={category.category}>
-                                                    <div className="px-3 py-2 text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-zinc-800/50 sticky top-0">
-                                                        {category.category}
+                                            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                                        >
+                                            {/* Header - Mobile only */}
+                                            <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/10 bg-zinc-800/50">
+                                                <span className="text-sm font-semibold text-white">Select Style Preset</span>
+                                                <button
+                                                    onClick={() => setShowStyleDropdown(false)}
+                                                    className="text-white/60 hover:text-white"
+                                                >
+                                                    <X className="w-5 h-5" />
+                                                </button>
+                                            </div>
+                                            <div className="overflow-y-auto max-h-[60vh] md:max-h-[350px]">
+                                                {/* Clear Style Option */}
+                                                {selectedStyle && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedStyle("");
+                                                            setShowStyleDropdown(false);
+                                                        }}
+                                                        className="w-full px-4 py-3 md:px-3 md:py-2 text-sm md:text-xs text-left text-red-400 hover:bg-red-500/10 border-b border-white/10"
+                                                    >
+                                                        ✕ Clear Style
+                                                    </button>
+                                                )}
+                                                {stylePresets.map((category) => (
+                                                    <div key={category.category}>
+                                                        <div className="px-4 py-2.5 md:px-3 md:py-2 text-xs md:text-[10px] font-bold text-purple-400 uppercase tracking-wider bg-zinc-800/50 sticky top-0">
+                                                            {category.category}
+                                                        </div>
+                                                        {category.styles.map((style) => (
+                                                            <button
+                                                                key={style.label}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedStyle(style.label);
+                                                                    if (!prompt.includes(style.value)) {
+                                                                        setPrompt(prev => prev ? `${prev}, ${style.value}` : style.value);
+                                                                    }
+                                                                    setShowStyleDropdown(false);
+                                                                }}
+                                                                className={cn(
+                                                                    "w-full px-4 py-3 md:px-3 md:py-2 text-sm md:text-xs text-left transition-colors",
+                                                                    selectedStyle === style.label
+                                                                        ? "bg-purple-500/20 text-purple-300"
+                                                                        : "text-white/70 hover:bg-white/10"
+                                                                )}
+                                                            >
+                                                                {style.label}
+                                                            </button>
+                                                        ))}
                                                     </div>
-                                                    {category.styles.map((style) => (
-                                                        <button
-                                                            key={style.label}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedStyle(style.label);
-                                                                // Append style to prompt if not already there
-                                                                if (!prompt.includes(style.value)) {
-                                                                    setPrompt(prev => prev ? `${prev}, ${style.value}` : style.value);
-                                                                }
-                                                                setShowStyleDropdown(false);
-                                                            }}
-                                                            className={cn(
-                                                                "w-full px-3 py-2 text-xs text-left transition-colors",
-                                                                selectedStyle === style.label
-                                                                    ? "bg-purple-500/20 text-purple-300"
-                                                                    : "text-white/70 hover:bg-white/10"
-                                                            )}
-                                                        >
-                                                            {style.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </motion.div>
                                     </>
                                 )}
