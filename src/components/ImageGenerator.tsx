@@ -547,7 +547,7 @@ export function ImageGenerator() {
                                         <motion.div
                                             initial={{ opacity: 0, y: 5 }}
                                             animate={{ opacity: 1, y: 0 }}
-                                            className="absolute bottom-full mb-2 right-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden w-[280px] max-h-[350px] overflow-y-auto z-[70] shadow-xl"
+                                            className="absolute bottom-full mb-2 left-0 md:left-auto md:right-0 bg-zinc-900 border border-white/10 rounded-xl overflow-hidden w-[280px] max-w-[calc(100vw-2rem)] max-h-[350px] overflow-y-auto z-[70] shadow-xl"
                                         >
                                             {/* Clear Style Option */}
                                             {selectedStyle && (
