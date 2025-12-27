@@ -429,7 +429,7 @@ export function ImageGenerator() {
                         />
 
                         {/* Controls Row - Always Visible */}
-                        <div className="flex items-center gap-1.5 md:gap-2 mb-3 pb-1">
+                        <div className="flex flex-wrap items-center justify-start gap-1.5 md:gap-2 mb-3 pb-1 overflow-x-auto scrollbar-hide">
                             {/* Aspect Ratio */}
                             <div className="relative shrink-0">
                                 <button
