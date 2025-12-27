@@ -117,46 +117,6 @@ export function ImageGenerator() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
 
-    // Sync generated images to localStorage for Gallery page
-    useEffect(() => {
-        if (generatedImages.length > 0) {
-            try {
-                // Convert to gallery format and save
-                const historyItems = generatedImages.map(img => ({
-                    id: img.id,
-                    image: img.url,
-                    prompt: img.prompt,
-                    timestamp: img.timestamp
-                }));
-                localStorage.setItem("imageHistory", JSON.stringify(historyItems));
-                console.log("Gallery synced:", historyItems.length, "images");
-            } catch (e) {
-                console.error("Failed to sync gallery:", e);
-            }
-        }
-    }, [generatedImages]);
-
-    // Load existing gallery images on mount
-    useEffect(() => {
-        try {
-            const stored = localStorage.getItem("imageHistory");
-            if (stored) {
-                const historyItems = JSON.parse(stored);
-                // Convert gallery format back to GeneratedImage format
-                const loadedImages: GeneratedImage[] = historyItems.map((item: { id: string; image: string; prompt: string; timestamp: number }) => ({
-                    id: item.id,
-                    url: item.image,
-                    prompt: item.prompt,
-                    timestamp: item.timestamp
-                }));
-                setGeneratedImages(loadedImages);
-                console.log("Loaded from gallery:", loadedImages.length, "images");
-            }
-        } catch (e) {
-            console.error("Failed to load gallery:", e);
-        }
-    }, []);
-
     // Voice recognition handler
     const toggleVoiceInput = () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
@@ -263,15 +223,23 @@ export function ImageGenerator() {
             const data = await res.json();
 
             if (data.imageUrls?.length) {
-                const newImages: GeneratedImage[] = data.imageUrls.map((url: string) => ({
+                const newImages = data.imageUrls.map((url: string) => ({
                     id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    url,
+                    image: url,
                     prompt,
                     timestamp: Date.now()
                 }));
 
-                setGeneratedImages(prev => [...newImages, ...prev]);
-                // Note: useEffect handles saving to localStorage automatically
+                // Save directly to localStorage for Gallery only (not displayed in generator)
+                try {
+                    const existingHistory = JSON.parse(localStorage.getItem("imageHistory") || "[]");
+                    const newHistory = [...newImages, ...existingHistory];
+                    localStorage.setItem("imageHistory", JSON.stringify(newHistory));
+                    console.log("Saved to gallery:", newImages.length, "images. Total:", newHistory.length);
+                    alert(`✅ ${newImages.length} image(s) generated and saved to Gallery!`);
+                } catch (e) {
+                    console.error("Failed to save to gallery:", e);
+                }
             } else {
                 console.warn("No imageUrls in API response:", data);
             }
