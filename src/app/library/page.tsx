@@ -21,8 +21,11 @@ export default function LibraryPage() {
     useEffect(() => {
         try {
             const stored = localStorage.getItem("imageHistory");
+            console.log("Loading gallery from localStorage:", stored ? JSON.parse(stored).length : 0, "images");
             if (stored) {
-                setHistory(JSON.parse(stored));
+                const parsed = JSON.parse(stored);
+                console.log("Gallery images:", parsed);
+                setHistory(parsed);
             }
         } catch (e) {
             console.error("Failed to load history", e);

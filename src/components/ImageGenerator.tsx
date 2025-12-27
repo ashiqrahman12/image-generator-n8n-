@@ -241,7 +241,9 @@ export function ImageGenerator() {
                         prompt: img.prompt,
                         timestamp: img.timestamp
                     }));
-                    localStorage.setItem("imageHistory", JSON.stringify([...historyItems, ...existingHistory]));
+                    const newHistory = [...historyItems, ...existingHistory];
+                    localStorage.setItem("imageHistory", JSON.stringify(newHistory));
+                    console.log("Saved to gallery:", historyItems.length, "images. Total:", newHistory.length);
                 } catch (e) {
                     console.error("Failed to save to gallery:", e);
                 }
