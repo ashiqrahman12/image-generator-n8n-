@@ -112,7 +112,7 @@ export function ImageGenerator() {
     const [isListening, setIsListening] = useState(false);
     const [selectedStyle, setSelectedStyle] = useState<string>("");
     const [showStyleDropdown, setShowStyleDropdown] = useState(false);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
@@ -603,14 +603,14 @@ export function ImageGenerator() {
                             </div>
                         </div>
 
-                        {/* Input Row */}
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-2 flex-1 bg-zinc-800/50 rounded-xl px-3 py-2.5 md:px-4 md:py-3">
+                        {/* Input Row - Gemini Style */}
+                        <div className="flex items-end gap-2">
+                            <div className="flex items-end gap-2 flex-1 bg-zinc-800/50 rounded-2xl px-3 py-2.5 md:px-4 md:py-3">
                                 {/* Upload Button */}
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     className={cn(
-                                        "p-1 md:p-1.5 rounded-lg transition-all hover:scale-110 shrink-0",
+                                        "p-1 md:p-1.5 rounded-lg transition-all hover:scale-110 shrink-0 mb-0.5",
                                         referenceImages.length > 0
                                             ? "text-purple-400 bg-purple-500/20"
                                             : "text-white/40 hover:text-white/70 hover:bg-white/10"
@@ -620,15 +620,26 @@ export function ImageGenerator() {
                                 >
                                     <Plus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
-                                <input
-                                    ref={inputRef}
-                                    type="text"
+                                <textarea
+                                    ref={textareaRef}
                                     value={prompt}
-                                    onChange={(e) => setPrompt(e.target.value)}
-                                    onKeyDown={handleKeyDown}
+                                    onChange={(e) => {
+                                        setPrompt(e.target.value);
+                                        // Auto-resize
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleGenerate();
+                                        }
+                                    }}
                                     placeholder="Describe the scene..."
-                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-base md:text-sm min-w-0"
+                                    className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-base md:text-sm min-w-0 resize-none overflow-y-auto leading-relaxed"
                                     disabled={loading}
+                                    rows={1}
+                                    style={{ maxHeight: '150px' }}
                                 />
                             </div>
 
