@@ -10,6 +10,7 @@ export async function POST(req: Request) {
         const quality = formData.get("quality") as string;
         const aspectRatio = formData.get("aspectRatio") as string;
         const outputFormat = formData.get("outputFormat") as string;
+        const stylePreset = formData.get("stylePreset") as string;
         const referenceImageCount = parseInt(formData.get("referenceImageCount") as string || "0");
 
         if (!prompt) {
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
         n8nFormData.append("quality", quality || "2k");
         n8nFormData.append("aspectRatio", aspectRatio || "1:1");
         n8nFormData.append("outputFormat", outputFormat || "png");
+        n8nFormData.append("stylePreset", stylePreset || "");
 
         // Append all reference images as binary files
         for (let i = 0; i < referenceImageCount; i++) {

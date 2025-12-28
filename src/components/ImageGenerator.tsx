@@ -209,6 +209,7 @@ export function ImageGenerator() {
             formData.append("quality", quality.toLowerCase());
             formData.append("aspectRatio", aspectRatio);
             formData.append("outputFormat", "png");
+            formData.append("stylePreset", selectedStyle);
 
             // Append reference images if selected
             referenceImages.forEach((img, index) => {
