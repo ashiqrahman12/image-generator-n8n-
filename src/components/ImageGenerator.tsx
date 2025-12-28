@@ -52,7 +52,7 @@ const stylePresets = [
         category: "Professional",
         styles: [
             { label: "Studio Lighting", value: "studio lighting, clean background, perfect lighting, high details, ecommerce product photography" },
-            { label: "Product Photography", value: "product photography, depth of field, sharp focus, advertising look, commercial" },
+            { label: "Product Photography with Logo and Text", value: "product photography with logo and text, depth of field, sharp focus, advertising look, commercial" },
             { label: "Flat Lay", value: "flat lay photography, top-down view, objects arranged on surface, aesthetic layout" },
             { label: "Minimalist", value: "minimalist style, simple, modern, solid color background, few elements, clean design" },
             { label: "Corporate Headshot", value: "professional headshot, corporate portrait, blurred office background, business attire" },
@@ -94,7 +94,6 @@ const stylePresets = [
         styles: [
             { label: "Steampunk", value: "steampunk style, Victorian era, mechanical, brass and copper tones, gears and cogs" },
             { label: "Surrealism", value: "surrealism art, dreamlike, Salvador Dali inspired, impossible scenes, artistic" },
-            { label: "Dark Fantasy", value: "dark fantasy, Game of Thrones style, Lord of the Rings, mystic, epic, dramatic lighting" },
         ]
     }
 ];
