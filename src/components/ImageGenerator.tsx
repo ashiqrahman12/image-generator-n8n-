@@ -99,13 +99,6 @@ const stylePresets = [
             { label: "T-Shirt Design", value: "t-shirt design, print ready, graphic tee, trendy, streetwear style, bold graphics" },
             { label: "Seamless Pattern", value: "seamless pattern, tileable, repeating pattern, textile design, fabric print, wallpaper" },
         ]
-    },
-    {
-        category: "Fantasy",
-        styles: [
-            { label: "Steampunk", value: "steampunk style, Victorian era, mechanical, brass and copper tones, gears and cogs" },
-            { label: "Surrealism", value: "surrealism art, dreamlike, Salvador Dali inspired, impossible scenes, artistic" },
-        ]
     }
 ];
 
