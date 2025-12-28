@@ -51,11 +51,10 @@ const stylePresets = [
     {
         category: "Professional",
         styles: [
-            { label: "Studio Lighting", value: "studio lighting, clean background, perfect lighting, high details, ecommerce product photography" },
             { label: "Product Photography with Logo and Text", value: "product photography with logo and text, depth of field, sharp focus, advertising look, commercial" },
             { label: "Flat Lay", value: "flat lay photography, top-down view, objects arranged on surface, aesthetic layout" },
-            { label: "Minimalist", value: "minimalist style, simple, modern, solid color background, few elements, clean design" },
             { label: "Corporate Headshot", value: "professional headshot, corporate portrait, blurred office background, business attire" },
+            { label: "Wedding Photography", value: "wedding photography, romantic, elegant, soft lighting, beautiful couple, celebration, dreamy atmosphere" },
         ]
     },
     {
@@ -66,6 +65,7 @@ const stylePresets = [
             { label: "Analog Film", value: "analog film photography, grainy, faded colors, Kodak Portra look, vintage aesthetic" },
             { label: "Macro", value: "macro photography, extreme close-up, intricate details, shallow depth of field" },
             { label: "National Geographic", value: "National Geographic style, wildlife photography, nature documentary, high quality, detailed" },
+            { label: "Underwater Photography", value: "underwater photography, ocean, marine life, deep blue, bubbles, aquatic, scuba diving perspective" },
         ]
     },
     {
@@ -74,19 +74,30 @@ const stylePresets = [
             { label: "3D Render", value: "3D render, Unreal Engine 5, hyper realistic, octane render, 8K, detailed" },
             { label: "Isometric 3D", value: "isometric 3D view, game-like perspective, clean lines, miniature style" },
             { label: "Cyberpunk", value: "cyberpunk style, neon lights, futuristic city, pink and blue tones, dystopian" },
-            { label: "Low Poly", value: "low poly art, polygonal shapes, minimalist 3D, geometric, game asset style" },
-            { label: "Claymorphism", value: "claymorphism, soft clay-like 3D, cute, pastel colors, rounded shapes, UI design" },
+            { label: "3D App Icon", value: "3D app icon, glossy, modern mobile app icon, rounded corners, vibrant gradient, UI design" },
+            { label: "Pixar / Disney 3D", value: "Pixar Disney 3D animation style, cute characters, vibrant colors, high quality CGI, family friendly" },
         ]
     },
     {
         category: "Artistic",
         styles: [
-            { label: "Anime", value: "anime style, Japanese animation, Studio Ghibli inspired, Makoto Shinkai style, vibrant colors" },
+            { label: "Modern Anime (4K)", value: "modern anime style, 4K quality, Japanese animation, vibrant colors, detailed, cinematic anime" },
+            { label: "Retro 90s Anime", value: "retro 90s anime style, VHS aesthetic, classic anime, nostalgic, hand-drawn cel animation look" },
             { label: "Oil Painting", value: "oil painting style, Van Gogh inspired, visible brush strokes, classical art, textured" },
             { label: "Watercolor", value: "watercolor painting, soft washes, artistic, delicate, flowing colors, paper texture" },
             { label: "Pencil Sketch", value: "pencil sketch, black and white drawing, charcoal, hand-drawn, artistic" },
             { label: "Vector Art", value: "vector art, flat design, clean lines, illustrator style, minimal, logo design" },
             { label: "Pixel Art", value: "pixel art, retro video game style, 8-bit, 16-bit, nostalgic, game sprite" },
+            { label: "Comic Book / Graphic Novel", value: "comic book style, graphic novel, bold outlines, halftone dots, superhero comic, dynamic poses" },
+        ]
+    },
+    {
+        category: "Design",
+        styles: [
+            { label: "Minimalist Logo", value: "minimalist logo design, simple, clean, modern, vector, brandable, iconic symbol" },
+            { label: "Sticker Art", value: "sticker art, die-cut sticker, cute, kawaii, bold outlines, vinyl sticker design" },
+            { label: "T-Shirt Design", value: "t-shirt design, print ready, graphic tee, trendy, streetwear style, bold graphics" },
+            { label: "Seamless Pattern", value: "seamless pattern, tileable, repeating pattern, textile design, fabric print, wallpaper" },
         ]
     },
     {
