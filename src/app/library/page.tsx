@@ -6,45 +6,72 @@ import { X, Download, Share2, Sparkles, Trash2, Maximize2 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
+import { getImageHistory, deleteImageFromHistory, clearAllHistory, ImageHistoryItem } from "@/lib/supabase";
 
 interface HistoryItem {
     id: string;
     image: string;
     prompt: string;
-    timestamp: number;
+    style_preset?: string | null;
+    created_at: string;
 }
 
 export default function LibraryPage() {
+    const { user, isLoaded } = useUser();
     const [history, setHistory] = useState<HistoryItem[]>([]);
+    const [loading, setLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState<HistoryItem | null>(null);
 
+    // Load images from Supabase when user is available
     useEffect(() => {
-        try {
-            const stored = localStorage.getItem("imageHistory");
-            console.log("Loading gallery from localStorage:", stored ? JSON.parse(stored).length : 0, "images");
-            if (stored) {
-                const parsed = JSON.parse(stored);
-                console.log("Gallery images:", parsed);
-                setHistory(parsed);
-            }
-        } catch (e) {
-            console.error("Failed to load history", e);
-        }
-    }, []);
+        async function loadHistory() {
+            if (!isLoaded) return;
 
-    const clearHistory = () => {
+            if (!user?.id) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const data = await getImageHistory(user.id);
+                // Map Supabase data to HistoryItem format
+                const items: HistoryItem[] = data.map((item: ImageHistoryItem) => ({
+                    id: item.id,
+                    image: item.image_url,
+                    prompt: item.prompt,
+                    style_preset: item.style_preset,
+                    created_at: item.created_at
+                }));
+                setHistory(items);
+                console.log("Loaded from Supabase:", items.length, "images");
+            } catch (e) {
+                console.error("Failed to load history", e);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadHistory();
+    }, [user, isLoaded]);
+
+    const handleClearHistory = async () => {
+        if (!user?.id) return;
         if (confirm("Are you sure you want to clear your library?")) {
-            localStorage.removeItem("imageHistory");
-            setHistory([]);
+            const success = await clearAllHistory(user.id);
+            if (success) {
+                setHistory([]);
+            }
         }
     };
 
-    const deleteItem = (id: string, e: React.MouseEvent) => {
+    const deleteItem = async (id: string, e: React.MouseEvent) => {
         e.stopPropagation();
-        const updated = history.filter(item => item.id !== id);
-        setHistory(updated);
-        localStorage.setItem("imageHistory", JSON.stringify(updated));
-    }
+        const success = await deleteImageFromHistory(id);
+        if (success) {
+            setHistory(prev => prev.filter(item => item.id !== id));
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background flex flex-col font-sans overflow-x-hidden">
@@ -62,7 +89,7 @@ export default function LibraryPage() {
                         </div>
                         {history.length > 0 && (
                             <button
-                                onClick={clearHistory}
+                                onClick={handleClearHistory}
                                 className="px-5 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl text-sm font-semibold hover:bg-red-500/20 transition-colors self-start sm:self-auto"
                             >
                                 Clear All
@@ -189,7 +216,7 @@ export default function LibraryPage() {
                                 <p className="text-white/90 text-sm md:text-base mb-4 line-clamp-2">{selectedImage.prompt}</p>
                                 <div className="flex items-center justify-between">
                                     <p className="text-white/50 text-xs md:text-sm">
-                                        Created on {new Date(selectedImage.timestamp).toLocaleDateString()}
+                                        Created on {new Date(selectedImage.created_at).toLocaleDateString()}
                                     </p>
                                     <a
                                         href={selectedImage.image}

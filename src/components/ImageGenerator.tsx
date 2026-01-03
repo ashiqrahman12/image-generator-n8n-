@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
+import { saveImageToHistory } from "@/lib/supabase";
 import {
     Sparkles,
     Plus,
@@ -103,6 +105,7 @@ const stylePresets = [
 ];
 
 export function ImageGenerator() {
+    const { user } = useUser();
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
@@ -227,25 +230,27 @@ export function ImageGenerator() {
             const data = await res.json();
 
             if (data.imageUrls?.length) {
-                const newImages = data.imageUrls.map((url: string) => ({
-                    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    image: url,
-                    prompt,
-                    timestamp: Date.now()
-                }));
-
-                // Save directly to localStorage for Gallery only (not displayed in generator)
-                try {
-                    const existingHistory = JSON.parse(localStorage.getItem("imageHistory") || "[]");
-                    const newHistory = [...newImages, ...existingHistory];
-                    localStorage.setItem("imageHistory", JSON.stringify(newHistory));
-                    console.log("Saved to gallery:", newImages.length, "images. Total:", newHistory.length);
-                    alert(`✅ ${newImages.length} image(s) generated and saved to Gallery!`);
-                } catch (e) {
-                    console.error("Failed to save to gallery:", e);
+                // Save to Supabase for Gallery (linked to user account)
+                if (user?.id) {
+                    let savedCount = 0;
+                    for (const url of data.imageUrls) {
+                        const saved = await saveImageToHistory(
+                            user.id,
+                            url,
+                            prompt,
+                            selectedStyle || undefined
+                        );
+                        if (saved) savedCount++;
+                    }
+                    console.log("Saved to Supabase gallery:", savedCount, "images");
+                    alert(`✅ ${savedCount} image(s) generated and saved to Gallery!`);
+                } else {
+                    console.warn("User not logged in, images not saved to gallery");
+                    alert("⚠️ Image generated but not saved. Please sign in to save to gallery.");
                 }
             } else {
                 console.warn("No imageUrls in API response:", data);
+                alert("❌ Generation failed. Please try again.");
             }
         } catch (error) {
             console.error("Generation failed:", error);
