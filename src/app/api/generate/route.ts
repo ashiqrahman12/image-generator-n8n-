@@ -1,15 +1,61 @@
 import { NextResponse } from "next/server";
 
-// n8n Webhook URL
-const N8N_WEBHOOK_URL = "https://himel15003.app.n8n.cloud/webhook/ai-image-generator";
+// Wavespeed.ai API Configuration
+const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
+const WAVESPEED_API_URL = "https://api.wavespeed.ai/api/v3/alibaba/wan-2.6/image-edit";
+const WAVESPEED_RESULT_URL = "https://api.wavespeed.ai/api/v3/predictions";
+
+// Helper function to convert File to base64 data URL
+async function fileToDataUrl(file: File): Promise<string> {
+    const arrayBuffer = await file.arrayBuffer();
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
+    return `data:${file.type};base64,${base64}`;
+}
+
+// Helper function to poll for result
+async function pollForResult(requestId: string, maxAttempts: number = 60): Promise<string[]> {
+    const headers = {
+        "Authorization": `Bearer ${WAVESPEED_API_KEY}`
+    };
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const response = await fetch(`${WAVESPEED_RESULT_URL}/${requestId}/result`, { headers });
+        const result = await response.json();
+
+        if (response.ok) {
+            const data = result.data;
+            const status = data.status;
+
+            if (status === "completed") {
+                // Return array of output URLs
+                return data.outputs || [];
+            } else if (status === "failed") {
+                throw new Error(`Wavespeed task failed: ${data.error || "Unknown error"}`);
+            }
+            // Still processing, continue polling
+            console.log(`Wavespeed status: ${status}, attempt ${attempt + 1}/${maxAttempts}`);
+        } else {
+            throw new Error(`Wavespeed polling error: ${response.status} - ${JSON.stringify(result)}`);
+        }
+
+        // Wait 1 second before next poll
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+
+    throw new Error("Wavespeed task timed out");
+}
 
 export async function POST(req: Request) {
     try {
+        if (!WAVESPEED_API_KEY) {
+            return NextResponse.json(
+                { error: "Wavespeed API key not configured" },
+                { status: 500 }
+            );
+        }
+
         const formData = await req.formData();
         const prompt = formData.get("prompt") as string;
-        const quality = formData.get("quality") as string;
-        const aspectRatio = formData.get("aspectRatio") as string;
-        const outputFormat = formData.get("outputFormat") as string;
         const stylePreset = formData.get("stylePreset") as string;
         const referenceImageCount = parseInt(formData.get("referenceImageCount") as string || "0");
 
@@ -20,79 +66,81 @@ export async function POST(req: Request) {
             );
         }
 
-        // Build FormData to send to n8n with binary file support
-        const n8nFormData = new FormData();
-        n8nFormData.append("prompt", prompt);
-        n8nFormData.append("quality", quality || "2k");
-        n8nFormData.append("aspectRatio", aspectRatio || "1:1");
-        n8nFormData.append("outputFormat", outputFormat || "png");
-        n8nFormData.append("stylePreset", stylePreset || "");
+        // Build full prompt with style preset
+        let fullPrompt = prompt;
+        if (stylePreset) {
+            fullPrompt = `${prompt}, ${stylePreset} style`;
+        }
 
-        // Append all reference images as binary files
+        // Get reference images (convert to URLs or base64)
+        const images: string[] = [];
         for (let i = 0; i < referenceImageCount; i++) {
             const file = formData.get(`referenceImage_${i}`) as File | null;
             if (file) {
-                // Append each file with its original name
-                n8nFormData.append(`referenceImage_${i}`, file, file.name);
+                // Convert file to base64 data URL for Wavespeed API
+                const dataUrl = await fileToDataUrl(file);
+                images.push(dataUrl);
             }
         }
-        n8nFormData.append("referenceImageCount", String(referenceImageCount));
 
-        // Send to n8n webhook
-        const response = await fetch(N8N_WEBHOOK_URL, {
+        // If no reference images, use a default placeholder or return error
+        if (images.length === 0) {
+            return NextResponse.json(
+                { error: "At least one reference image is required for image editing" },
+                { status: 400 }
+            );
+        }
+
+        // Build Wavespeed API payload
+        const payload = {
+            enable_prompt_expansion: false,
+            images: images,
+            prompt: fullPrompt,
+            seed: -1
+        };
+
+        console.log("Sending to Wavespeed:", { prompt: fullPrompt, imagesCount: images.length });
+
+        // Submit task to Wavespeed
+        const response = await fetch(WAVESPEED_API_URL, {
             method: "POST",
-            body: n8nFormData, // FormData automatically sets multipart/form-data with boundary
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${WAVESPEED_API_KEY}`
+            },
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-            throw new Error(`n8n webhook error: ${response.statusText}`);
+            const errorText = await response.text();
+            console.error("Wavespeed API error:", response.status, errorText);
+            throw new Error(`Wavespeed API error: ${response.status} - ${errorText}`);
         }
 
-        // Check content type to handle binary image response
-        const contentType = response.headers.get("content-type");
+        const result = await response.json();
+        const requestId = result.data?.id;
 
-        if (contentType?.includes("image/")) {
-            // n8n returns binary image directly - convert to array
-            const imageBlob = await response.blob();
-            const imageBuffer = await imageBlob.arrayBuffer();
-            const base64 = Buffer.from(imageBuffer).toString("base64");
-            const mimeType = contentType.split(";")[0];
-
-            return NextResponse.json({
-                imageUrls: [`data:${mimeType};base64,${base64}`]
-            });
-        } else if (contentType?.includes("application/json")) {
-            // n8n returns JSON
-            const data = await response.json();
-
-            // Check if it's an array of images or object with images
-            let images: string[] = [];
-
-            if (Array.isArray(data)) {
-                // Handle array response [ "base64/url", "base64/url" ] or [ {url: "..."} ]
-                images = data.map(item => typeof item === 'string' ? item : item.url || item.image || item.output).filter(Boolean);
-            } else if (data.images && Array.isArray(data.images)) {
-                // Handle { images: [...] }
-                images = data.images;
-            } else if (data.imageUrl || data.image || data.output) {
-                // Handle single image object { imageUrl: "..." }
-                images = [data.imageUrl || data.image || data.output];
-            } else {
-                // Try to find any property that looks like an image
-                const values = Object.values(data);
-                images = values.filter(val => typeof val === 'string' && (val.startsWith('http') || val.startsWith('data:image'))).map(String);
-            }
-
-            return NextResponse.json({ imageUrls: images });
-        } else {
-            // Fallback
-            return NextResponse.json({ error: "Unknown response format from n8n" }, { status: 500 });
+        if (!requestId) {
+            throw new Error("No request ID returned from Wavespeed");
         }
+
+        console.log(`Wavespeed task submitted. Request ID: ${requestId}`);
+
+        // Poll for result
+        const outputUrls = await pollForResult(requestId);
+
+        if (outputUrls.length === 0) {
+            throw new Error("No output images returned from Wavespeed");
+        }
+
+        console.log(`Wavespeed completed. Output URLs:`, outputUrls);
+
+        return NextResponse.json({ imageUrls: outputUrls });
 
     } catch (error) {
         console.error("Error generating image:", error);
         return NextResponse.json(
-            { error: "Failed to generate image" },
+            { error: error instanceof Error ? error.message : "Failed to generate image" },
             { status: 500 }
         );
     }
