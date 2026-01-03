@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
 const WAVESPEED_API_URL = "https://api.wavespeed.ai/api/v3/alibaba/wan-2.6/image-edit";
 const WAVESPEED_RESULT_URL = "https://api.wavespeed.ai/api/v3/predictions";
+const WAVESPEED_PROMPT_OPTIMIZER_URL = "https://api.wavespeed.ai/api/v3/wavespeed-ai/prompt-optimizer";
 
 // Helper function to convert File to base64 data URL
 async function fileToDataUrl(file: File): Promise<string> {
@@ -12,7 +13,7 @@ async function fileToDataUrl(file: File): Promise<string> {
     return `data:${file.type};base64,${base64}`;
 }
 
-// Helper function to poll for result
+// Helper function to poll for result (used by both optimizer and image edit)
 async function pollForResult(requestId: string, maxAttempts: number = 60): Promise<string[]> {
     const headers = {
         "Authorization": `Bearer ${WAVESPEED_API_KEY}`
@@ -27,7 +28,7 @@ async function pollForResult(requestId: string, maxAttempts: number = 60): Promi
             const status = data.status;
 
             if (status === "completed") {
-                // Return array of output URLs
+                // Return array of output URLs or outputs
                 return data.outputs || [];
             } else if (status === "failed") {
                 throw new Error(`Wavespeed task failed: ${data.error || "Unknown error"}`);
@@ -43,6 +44,57 @@ async function pollForResult(requestId: string, maxAttempts: number = 60): Promi
     }
 
     throw new Error("Wavespeed task timed out");
+}
+
+// Optimize prompt using Wavespeed.ai Prompt Optimizer API
+async function optimizePrompt(text: string, imageUrl: string, style: string = "default"): Promise<string> {
+    const payload = {
+        enable_sync_mode: false,
+        image: imageUrl,
+        mode: "image",
+        style: style,
+        text: text
+    };
+
+    console.log("Optimizing prompt:", { text, style });
+
+    const response = await fetch(WAVESPEED_PROMPT_OPTIMIZER_URL, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${WAVESPEED_API_KEY}`
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        console.error("Prompt optimizer error:", response.status);
+        // Return original prompt if optimizer fails
+        return text;
+    }
+
+    const result = await response.json();
+    const requestId = result.data?.id;
+
+    if (!requestId) {
+        console.error("No request ID from prompt optimizer");
+        return text;
+    }
+
+    console.log(`Prompt optimizer task submitted. Request ID: ${requestId}`);
+
+    try {
+        // Poll for optimized prompt result
+        const outputs = await pollForResult(requestId, 30);
+        if (outputs.length > 0 && typeof outputs[0] === "string") {
+            console.log("Optimized prompt:", outputs[0]);
+            return outputs[0];
+        }
+    } catch (error) {
+        console.error("Prompt optimization failed, using original:", error);
+    }
+
+    return text;
 }
 
 export async function POST(req: Request) {
@@ -91,11 +143,20 @@ export async function POST(req: Request) {
             );
         }
 
-        // Build Wavespeed API payload
+        // Step 1: Optimize prompt using Wavespeed.ai Prompt Optimizer
+        // Uses the first reference image for context
+        let optimizedPrompt = fullPrompt;
+        try {
+            optimizedPrompt = await optimizePrompt(fullPrompt, images[0], "default");
+        } catch (error) {
+            console.error("Prompt optimization error, using original prompt:", error);
+        }
+
+        // Step 2: Build Wavespeed API payload with optimized prompt
         const payload = {
             enable_prompt_expansion: false,
             images: images,
-            prompt: fullPrompt,
+            prompt: optimizedPrompt,
             seed: -1
         };
 
