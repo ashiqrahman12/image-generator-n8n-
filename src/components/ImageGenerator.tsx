@@ -508,11 +508,11 @@ export function ImageGenerator() {
                                 ))}
                             </div>
 
-                            {/* Voice Command - Mobile Only */}
+                            {/* Voice Command */}
                             <button
                                 onClick={toggleVoiceInput}
                                 className={cn(
-                                    "md:hidden flex items-center gap-2 px-3 py-2 rounded-lg border shrink-0 transition-all",
+                                    "flex items-center gap-2 px-3 py-2 rounded-lg border shrink-0 transition-all",
                                     isListening
                                         ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
                                         : "bg-zinc-800/80 border-white/10 text-white/80 hover:bg-zinc-700/80"
