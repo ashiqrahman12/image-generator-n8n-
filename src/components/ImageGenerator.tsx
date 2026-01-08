@@ -120,47 +120,91 @@ export function ImageGenerator() {
     const [showStyleDropdown, setShowStyleDropdown] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const recognitionRef = useRef<any>(null);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const [isTranscribing, setIsTranscribing] = useState(false);
 
-    // Voice recognition handler
-    const toggleVoiceInput = () => {
-        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Voice recognition is not supported in your browser');
-            return;
-        }
-
+    // Voice input handler using Whisper API
+    const toggleVoiceInput = async () => {
         if (isListening) {
-            recognitionRef.current?.stop();
+            // Stop recording
+            mediaRecorderRef.current?.stop();
             setIsListening(false);
             return;
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const win = window as any;
-        const SpeechRecognition = win.SpeechRecognition || win.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognitionRef.current = recognition;
+        try {
+            // Request microphone access
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        recognition.continuous = false;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
+            // Create MediaRecorder
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+            });
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
 
-        recognition.onstart = () => setIsListening(true);
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        recognition.onresult = (event: any) => {
-            const transcript = Array.from(event.results)
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                .map((result: any) => result[0].transcript)
-                .join('');
-            setPrompt(transcript);
-        };
+            mediaRecorder.onstop = async () => {
+                // Stop all tracks
+                stream.getTracks().forEach(track => track.stop());
 
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
+                // Create audio blob
+                const audioBlob = new Blob(audioChunksRef.current, {
+                    type: mediaRecorder.mimeType
+                });
 
-        recognition.start();
+                if (audioBlob.size === 0) {
+                    alert("No audio recorded. Please try again.");
+                    return;
+                }
+
+                // Send to Whisper API
+                setIsTranscribing(true);
+                try {
+                    const formData = new FormData();
+                    formData.append("audio", audioBlob, "recording.webm");
+
+                    const response = await fetch("/api/transcribe", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok && data.text) {
+                        // Append transcribed text to prompt
+                        setPrompt(prev => prev ? `${prev} ${data.text}` : data.text);
+                    } else {
+                        console.error("Transcription error:", data.error);
+                        alert("Failed to transcribe audio. Please try again.");
+                    }
+                } catch (error) {
+                    console.error("Transcription failed:", error);
+                    alert("Failed to transcribe audio. Please try again.");
+                } finally {
+                    setIsTranscribing(false);
+                }
+            };
+
+            mediaRecorder.onerror = () => {
+                setIsListening(false);
+                alert("Recording error. Please try again.");
+            };
+
+            // Start recording
+            mediaRecorder.start();
+            setIsListening(true);
+
+        } catch (error) {
+            console.error("Microphone access error:", error);
+            alert("Could not access microphone. Please grant permission.");
+        }
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -511,15 +555,20 @@ export function ImageGenerator() {
                             {/* Voice Command */}
                             <button
                                 onClick={toggleVoiceInput}
+                                disabled={isTranscribing}
                                 className={cn(
                                     "flex items-center gap-2 px-3 py-2 rounded-lg border shrink-0 transition-all",
-                                    isListening
-                                        ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
-                                        : "bg-zinc-800/80 border-white/10 text-white/80 hover:bg-zinc-700/80"
+                                    isTranscribing
+                                        ? "bg-purple-500/20 border-purple-500/50 text-purple-400"
+                                        : isListening
+                                            ? "bg-red-500/20 border-red-500/50 text-red-400 animate-pulse"
+                                            : "bg-zinc-800/80 border-white/10 text-white/80 hover:bg-zinc-700/80"
                                 )}
-                                title={isListening ? "Stop listening" : "Voice input"}
+                                title={isTranscribing ? "Transcribing..." : isListening ? "Stop recording" : "Voice input (any language)"}
                             >
-                                {isListening ? (
+                                {isTranscribing ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : isListening ? (
                                     <MicOff className="w-4 h-4" />
                                 ) : (
                                     <Mic className="w-4 h-4" />
