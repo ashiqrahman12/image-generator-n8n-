@@ -90,25 +90,38 @@ export async function POST(req: Request) {
         }
 
         const result = await response.json();
+        console.log("Whisper API response:", JSON.stringify(result, null, 2));
+
+        // Try to extract text from various response formats
+        let transcribedText = "";
 
         // Check if sync mode returned result directly
-        if (result.data?.outputs?.[0]) {
-            console.log("Whisper result (sync):", result.data.outputs[0]);
-            return NextResponse.json({ text: result.data.outputs[0] });
+        if (result.data?.outputs) {
+            const outputs = result.data.outputs;
+            if (Array.isArray(outputs) && outputs.length > 0) {
+                // Could be string or object with text property
+                const firstOutput = outputs[0];
+                if (typeof firstOutput === "string") {
+                    transcribedText = firstOutput;
+                } else if (firstOutput?.text) {
+                    transcribedText = firstOutput.text;
+                } else if (firstOutput?.transcription) {
+                    transcribedText = firstOutput.transcription;
+                }
+            }
+        } else if (result.data?.text) {
+            transcribedText = result.data.text;
+        } else if (result.data?.transcription) {
+            transcribedText = result.data.transcription;
+        } else if (result.data?.id && !transcribedText) {
+            // Need to poll for result
+            const requestId = result.data.id;
+            console.log(`Whisper task submitted. Request ID: ${requestId}`);
+            transcribedText = await pollForResult(requestId);
         }
-
-        // Otherwise poll for result
-        const requestId = result.data?.id;
-        if (!requestId) {
-            throw new Error("No request ID returned from Whisper");
-        }
-
-        console.log(`Whisper task submitted. Request ID: ${requestId}`);
-
-        // Poll for result
-        const transcribedText = await pollForResult(requestId);
 
         if (!transcribedText) {
+            console.error("Could not extract text from response:", result);
             throw new Error("No transcription returned from Whisper");
         }
 
