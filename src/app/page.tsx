@@ -25,18 +25,6 @@ export default function Home() {
         {/* Hero Section */}
         <section className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center text-center p-6 pt-24 md:pt-6 max-w-4xl mx-auto z-10 space-y-10">
           {/* Badge - Hidden on Mobile */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-            className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-            </span>
-            <span className="text-xs font-medium text-white/80 tracking-wide uppercase">AI Image Generator <span className="text-white/40 ml-1">BETA</span></span>
-          </motion.div>
 
           {/* Verified Hero Title */}
           <div className="space-y-4">
