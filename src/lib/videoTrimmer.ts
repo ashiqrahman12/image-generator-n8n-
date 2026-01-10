@@ -1,177 +1,11 @@
 "use client";
 
-let ffmpeg: any = null;
-let loaded = false;
-let loading = false;
+// Video trimming utility
+// Note: Client-side FFmpeg.wasm has compatibility issues with Next.js/Vercel
+// Using file size limits with server-side start_time/end_time instead
 
 /**
- * Initialize FFmpeg.wasm - loads the WebAssembly modules from CDN
- * Uses jsdelivr which has proper CORS headers
- */
-export async function initFFmpeg(
-    onProgress?: (message: string) => void
-): Promise<boolean> {
-    if (loaded && ffmpeg) {
-        return true;
-    }
-
-    if (loading) {
-        // Wait for current loading to complete
-        while (loading) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return loaded;
-    }
-
-    loading = true;
-
-    try {
-        onProgress?.("Loading FFmpeg...");
-
-        // Dynamic import to avoid Next.js bundling issues
-        const { FFmpeg } = await import("@ffmpeg/ffmpeg");
-        const { toBlobURL } = await import("@ffmpeg/util");
-
-        ffmpeg = new FFmpeg();
-
-        // Set up logging
-        ffmpeg.on("log", ({ message }: { message: string }) => {
-            console.log("[FFmpeg]", message);
-        });
-
-        ffmpeg.on("progress", ({ progress }: { progress: number }) => {
-            const percent = Math.round(progress * 100);
-            onProgress?.(`Trimming: ${percent}%`);
-        });
-
-        onProgress?.("Downloading FFmpeg (first time only)...");
-
-        // Use jsdelivr CDN which has proper CORS headers
-        // Using @ffmpeg/core@0.12.6 with esm path
-        const baseURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
-
-        await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-        });
-
-        loaded = true;
-        loading = false;
-        onProgress?.("FFmpeg ready!");
-        return true;
-    } catch (error) {
-        console.error("Failed to load FFmpeg:", error);
-        onProgress?.(`FFmpeg load failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        loading = false;
-        return false;
-    }
-}
-
-/**
- * Check if FFmpeg is loaded
- */
-export function isFFmpegLoaded(): boolean {
-    return loaded && ffmpeg !== null;
-}
-
-/**
- * Trim a video file to a specified duration
- * @param videoFile - The input video file
- * @param startTime - Start time in seconds
- * @param duration - Duration in seconds (default 30)
- * @param onProgress - Progress callback
- * @returns Trimmed video as a File object
- */
-export async function trimVideo(
-    videoFile: File,
-    startTime: number,
-    duration: number = 30,
-    onProgress?: (message: string) => void
-): Promise<File | null> {
-    try {
-        // Ensure FFmpeg is loaded
-        if (!ffmpeg || !loaded) {
-            const success = await initFFmpeg(onProgress);
-            if (!success || !ffmpeg) {
-                throw new Error("Failed to initialize FFmpeg");
-            }
-        }
-
-        onProgress?.("Reading video...");
-
-        // Dynamic import fetchFile
-        const { fetchFile } = await import("@ffmpeg/util");
-
-        // Use mp4 for output for maximum compatibility
-        const inputFileName = `input_${Date.now()}.mp4`;
-        const outputFileName = `output_${Date.now()}.mp4`;
-
-        // Write input file to FFmpeg virtual file system
-        const fileData = await fetchFile(videoFile);
-        await ffmpeg.writeFile(inputFileName, fileData);
-
-        onProgress?.("Trimming video...");
-
-        // Run FFmpeg trim command
-        // -ss: start time (before -i for fast seeking)
-        // -t: duration
-        // -c copy: copy codec (fast, no re-encoding)
-        await ffmpeg.exec([
-            "-ss", startTime.toFixed(2),
-            "-i", inputFileName,
-            "-t", duration.toFixed(2),
-            "-c", "copy",
-            "-avoid_negative_ts", "make_zero",
-            "-movflags", "+faststart",
-            outputFileName
-        ]);
-
-        onProgress?.("Saving trimmed video...");
-
-        // Read the output file
-        const data = await ffmpeg.readFile(outputFileName);
-
-        // Clean up files from virtual file system
-        try {
-            await ffmpeg.deleteFile(inputFileName);
-            await ffmpeg.deleteFile(outputFileName);
-        } catch (e) {
-            console.warn("Cleanup warning:", e);
-        }
-
-        // Create new File from the output
-        let blobData: Uint8Array;
-        if (data instanceof Uint8Array) {
-            blobData = data;
-        } else if (typeof data === 'string') {
-            blobData = new TextEncoder().encode(data);
-        } else {
-            blobData = new Uint8Array(data as ArrayBuffer);
-        }
-
-        // Use ArrayBuffer for Blob to avoid TypeScript issues with SharedArrayBuffer
-        const trimmedBlob = new Blob([blobData.buffer.slice(blobData.byteOffset, blobData.byteOffset + blobData.byteLength) as ArrayBuffer], { type: 'video/mp4' });
-        const trimmedFile = new File([trimmedBlob], `trimmed_video.mp4`, {
-            type: 'video/mp4',
-            lastModified: Date.now()
-        });
-
-        const originalSizeMB = (videoFile.size / (1024 * 1024)).toFixed(1);
-        const trimmedSizeMB = (trimmedFile.size / (1024 * 1024)).toFixed(1);
-        onProgress?.(`Done! ${originalSizeMB}MB → ${trimmedSizeMB}MB`);
-
-        console.log(`[VideoTrimmer] Trimmed: ${originalSizeMB}MB → ${trimmedSizeMB}MB`);
-
-        return trimmedFile;
-    } catch (error) {
-        console.error("Failed to trim video:", error);
-        onProgress?.(`Trim error: ${error instanceof Error ? error.message : "Unknown error"}`);
-        return null;
-    }
-}
-
-/**
- * Get video duration
+ * Get video duration from a file
  */
 export function getVideoDuration(file: File): Promise<number> {
     return new Promise((resolve, reject) => {
@@ -190,4 +24,27 @@ export function getVideoDuration(file: File): Promise<number> {
 
         video.src = URL.createObjectURL(file);
     });
+}
+
+/**
+ * Format file size for display
+ */
+export function formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/**
+ * Check if video file is within acceptable limits
+ * Returns error message if invalid, null if valid
+ */
+export function validateVideoFile(file: File, maxSizeMB: number = 10): string | null {
+    const sizeMB = file.size / (1024 * 1024);
+
+    if (sizeMB > maxSizeMB) {
+        return `Video file is too large (${sizeMB.toFixed(1)}MB). Maximum allowed: ${maxSizeMB}MB. Please compress your video or use a shorter clip.`;
+    }
+
+    return null;
 }

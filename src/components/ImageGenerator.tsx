@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { saveImageToHistory } from "@/lib/supabase";
 import { useModel } from "@/context/ModelContext";
-import { initFFmpeg, trimVideo, isFFmpegLoaded } from "@/lib/videoTrimmer";
+import { validateVideoFile } from "@/lib/videoTrimmer";
 import {
     Sparkles,
     Plus,
@@ -278,55 +278,28 @@ export function ImageGenerator() {
         };
     };
 
-    // Save trimmed video selection from modal - uses FFmpeg.wasm for actual trimming
-    const handleSaveTrim = async () => {
+    // Save video selection from modal
+    // Note: The selected start_time/end_time are sent to the API which handles trimming server-side
+    const handleSaveTrim = () => {
         if (!tempVideoFile || !tempVideoPreview) return;
 
-        // If video needs trimming (longer than 30s), use FFmpeg
-        if (videoDuration > 30) {
-            setIsTrimming(true);
-            setTrimProgress("Initializing FFmpeg...");
-
-            try {
-                const duration = Math.min(30, videoDuration - videoStartTime);
-                const trimmedFile = await trimVideo(
-                    tempVideoFile,
-                    videoStartTime,
-                    duration,
-                    (progress) => setTrimProgress(progress)
-                );
-
-                if (trimmedFile) {
-                    // Create new preview URL for trimmed video
-                    const trimmedUrl = URL.createObjectURL(trimmedFile);
-
-                    setReferenceVideo(trimmedFile);
-                    setReferenceVideoPreview(trimmedUrl);
-                    setVideoDuration(duration);
-                    setVideoStartTime(0);
-                    setVideoEndTime(duration);
-
-                    // Clean up old preview
-                    URL.revokeObjectURL(tempVideoPreview);
-                } else {
-                    alert("❌ Failed to trim video. Please try a smaller video.");
-                }
-            } catch (error) {
-                console.error("Trim error:", error);
-                alert(`❌ Trim failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-            } finally {
-                setIsTrimming(false);
-                setTrimProgress("");
-            }
-        } else {
-            // Video is already under 30s, use as-is
-            setReferenceVideo(tempVideoFile);
-            setReferenceVideoPreview(tempVideoPreview);
+        // Validate file size (10MB limit for API)
+        const validationError = validateVideoFile(tempVideoFile, 10);
+        if (validationError) {
+            alert(`❌ ${validationError}\n\nTip: Use a video compressor or screen recorder to create a shorter clip.`);
+            return;
         }
+
+        // Save the video with selected time range
+        // The start_time and end_time will be sent to the API
+        setReferenceVideo(tempVideoFile);
+        setReferenceVideoPreview(tempVideoPreview);
 
         setShowTrimModal(false);
         setTempVideoFile(null);
         setTempVideoPreview(null);
+        setIsTrimming(false);
+        setTrimProgress("");
     };
 
     // Cancel trim modal

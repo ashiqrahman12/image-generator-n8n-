@@ -4,26 +4,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   experimental: {
     serverActions: {
-      bodySizeLimit: '100mb', // Increase for video uploads
+      bodySizeLimit: '15mb', // Allow video uploads up to 15MB
     },
-  },
-  // Headers for SharedArrayBuffer support (required by FFmpeg.wasm multi-threaded core)
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-        ],
-      },
-    ];
   },
 };
 
