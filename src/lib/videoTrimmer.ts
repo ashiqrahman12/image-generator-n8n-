@@ -1,14 +1,12 @@
 "use client";
 
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
-
-let ffmpeg: FFmpeg | null = null;
+let ffmpeg: any = null;
 let loaded = false;
+let loading = false;
 
 /**
- * Initialize FFmpeg.wasm - loads the WebAssembly modules
- * Call this once before using trimVideo
+ * Initialize FFmpeg.wasm - loads the WebAssembly modules from CDN
+ * Uses dynamic import to avoid Next.js bundling issues
  */
 export async function initFFmpeg(
     onProgress?: (message: string) => void
@@ -17,34 +15,52 @@ export async function initFFmpeg(
         return true;
     }
 
+    if (loading) {
+        // Wait for current loading to complete
+        while (loading) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        return loaded;
+    }
+
+    loading = true;
+
     try {
+        onProgress?.("Loading FFmpeg modules...");
+
+        // Dynamic import to avoid Next.js bundling issues
+        const { FFmpeg } = await import("@ffmpeg/ffmpeg");
+        const { toBlobURL } = await import("@ffmpeg/util");
+
         ffmpeg = new FFmpeg();
 
         // Set up logging
-        ffmpeg.on("log", ({ message }) => {
+        ffmpeg.on("log", ({ message }: { message: string }) => {
             console.log("[FFmpeg]", message);
         });
 
-        ffmpeg.on("progress", ({ progress, time }) => {
+        ffmpeg.on("progress", ({ progress, time }: { progress: number; time: number }) => {
             const percent = Math.round(progress * 100);
-            onProgress?.(`Processing: ${percent}% (${Math.round(time / 1000000)}s)`);
+            onProgress?.(`Processing: ${percent}%`);
         });
 
-        onProgress?.("Loading FFmpeg...");
+        onProgress?.("Downloading FFmpeg core...");
 
-        // Load FFmpeg core from CDN
-        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+        // Load FFmpeg core from CDN - use umd version for better compatibility
+        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
         await ffmpeg.load({
             coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
             wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
         });
 
         loaded = true;
-        onProgress?.("FFmpeg loaded!");
+        loading = false;
+        onProgress?.("FFmpeg ready!");
         return true;
     } catch (error) {
         console.error("Failed to load FFmpeg:", error);
-        onProgress?.("Failed to load FFmpeg");
+        onProgress?.(`Failed to load FFmpeg: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        loading = false;
         return false;
     }
 }
@@ -81,21 +97,24 @@ export async function trimVideo(
 
         onProgress?.("Reading video file...");
 
+        // Dynamic import fetchFile
+        const { fetchFile } = await import("@ffmpeg/util");
+
         // Get file extension
         const extension = videoFile.name.split('.').pop()?.toLowerCase() || 'mp4';
         const inputFileName = `input.${extension}`;
         const outputFileName = `output.${extension}`;
 
         // Write input file to FFmpeg virtual file system
-        await ffmpeg.writeFile(inputFileName, await fetchFile(videoFile));
+        const fileData = await fetchFile(videoFile);
+        await ffmpeg.writeFile(inputFileName, fileData);
 
         onProgress?.("Trimming video...");
 
         // Run FFmpeg trim command
-        // -ss: start time
+        // -ss: start time (before -i for fast seeking)
         // -t: duration
-        // -c copy: copy codec (fast, no re-encoding for supported formats)
-        // -c:v libx264 -c:a aac: re-encode if needed for compatibility
+        // -c copy: copy codec (fast, no re-encoding)
         await ffmpeg.exec([
             "-ss", startTime.toString(),
             "-i", inputFileName,
@@ -114,13 +133,11 @@ export async function trimVideo(
         await ffmpeg.deleteFile(inputFileName);
         await ffmpeg.deleteFile(outputFileName);
 
-        // Create new File from the output - handle both Uint8Array and string
-        const blobData = typeof data === 'string'
-            ? new TextEncoder().encode(data)
-            : new Uint8Array(data);
-        const trimmedBlob = new Blob([blobData.buffer], { type: videoFile.type });
+        // Create new File from the output
+        const uint8Array = new Uint8Array(data as ArrayBuffer);
+        const trimmedBlob = new Blob([uint8Array], { type: videoFile.type || 'video/mp4' });
         const trimmedFile = new File([trimmedBlob], `trimmed_${videoFile.name}`, {
-            type: videoFile.type,
+            type: videoFile.type || 'video/mp4',
             lastModified: Date.now()
         });
 
