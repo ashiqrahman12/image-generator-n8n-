@@ -5,19 +5,8 @@ let loaded = false;
 let loading = false;
 
 /**
- * Check if SharedArrayBuffer is available
- */
-function isSharedArrayBufferAvailable(): boolean {
-    try {
-        return typeof SharedArrayBuffer !== 'undefined';
-    } catch {
-        return false;
-    }
-}
-
-/**
  * Initialize FFmpeg.wasm - loads the WebAssembly modules from CDN
- * Uses single-threaded version to avoid SharedArrayBuffer requirement
+ * Uses jsdelivr which has proper CORS headers
  */
 export async function initFFmpeg(
     onProgress?: (message: string) => void
@@ -57,13 +46,13 @@ export async function initFFmpeg(
 
         onProgress?.("Downloading FFmpeg (first time only)...");
 
-        // Use single-threaded core to avoid SharedArrayBuffer requirement
-        // This works without COOP/COEP headers
-        const coreBaseURL = "https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/umd";
+        // Use jsdelivr CDN which has proper CORS headers
+        // Using @ffmpeg/core@0.12.6 with esm path
+        const baseURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm";
 
         await ffmpeg.load({
-            coreURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.wasm`, "application/wasm"),
+            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
         });
 
         loaded = true;
