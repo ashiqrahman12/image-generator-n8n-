@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { saveImageToHistory } from "@/lib/supabase";
 import { useModel } from "@/context/ModelContext";
+import { initFFmpeg, trimVideo, isFFmpegLoaded } from "@/lib/videoTrimmer";
 import {
     Sparkles,
     Plus,
@@ -128,6 +129,8 @@ export function ImageGenerator() {
     const [showTrimModal, setShowTrimModal] = useState(false);
     const [tempVideoFile, setTempVideoFile] = useState<File | null>(null);
     const [tempVideoPreview, setTempVideoPreview] = useState<string | null>(null);
+    const [isTrimming, setIsTrimming] = useState(false);
+    const [trimProgress, setTrimProgress] = useState<string>("");
     const [isListening, setIsListening] = useState(false);
     const [selectedStyle, setSelectedStyle] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>("");
@@ -248,14 +251,6 @@ export function ImageGenerator() {
             return;
         }
 
-        const fileSizeMB = videoFile.size / (1024 * 1024);
-
-        // Strict file size limit - API can't handle large files
-        if (fileSizeMB > 10) {
-            alert(`❌ Video file is too large (${fileSizeMB.toFixed(1)}MB).\n\nMaximum: 10MB\n\nPlease compress your video or use a shorter, smaller file.\n\nTip: Use a video compressor tool or screen recorder to make a shorter clip.`);
-            return;
-        }
-
         const videoUrl = URL.createObjectURL(videoFile);
 
         // Get video duration to decide if we need trim modal
@@ -283,15 +278,55 @@ export function ImageGenerator() {
         };
     };
 
-    // Save trimmed video selection from modal
-    const handleSaveTrim = () => {
-        if (tempVideoFile && tempVideoPreview) {
+    // Save trimmed video selection from modal - uses FFmpeg.wasm for actual trimming
+    const handleSaveTrim = async () => {
+        if (!tempVideoFile || !tempVideoPreview) return;
+
+        // If video needs trimming (longer than 30s), use FFmpeg
+        if (videoDuration > 30) {
+            setIsTrimming(true);
+            setTrimProgress("Initializing FFmpeg...");
+
+            try {
+                const duration = Math.min(30, videoDuration - videoStartTime);
+                const trimmedFile = await trimVideo(
+                    tempVideoFile,
+                    videoStartTime,
+                    duration,
+                    (progress) => setTrimProgress(progress)
+                );
+
+                if (trimmedFile) {
+                    // Create new preview URL for trimmed video
+                    const trimmedUrl = URL.createObjectURL(trimmedFile);
+
+                    setReferenceVideo(trimmedFile);
+                    setReferenceVideoPreview(trimmedUrl);
+                    setVideoDuration(duration);
+                    setVideoStartTime(0);
+                    setVideoEndTime(duration);
+
+                    // Clean up old preview
+                    URL.revokeObjectURL(tempVideoPreview);
+                } else {
+                    alert("❌ Failed to trim video. Please try a smaller video.");
+                }
+            } catch (error) {
+                console.error("Trim error:", error);
+                alert(`❌ Trim failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            } finally {
+                setIsTrimming(false);
+                setTrimProgress("");
+            }
+        } else {
+            // Video is already under 30s, use as-is
             setReferenceVideo(tempVideoFile);
             setReferenceVideoPreview(tempVideoPreview);
-            setShowTrimModal(false);
-            setTempVideoFile(null);
-            setTempVideoPreview(null);
         }
+
+        setShowTrimModal(false);
+        setTempVideoFile(null);
+        setTempVideoPreview(null);
     };
 
     // Cancel trim modal
@@ -1198,19 +1233,40 @@ export function ImageGenerator() {
                             </div>
 
                             {/* Footer with buttons */}
-                            <div className="flex items-center justify-end gap-3 p-4 border-t border-white/10 bg-zinc-900/50">
-                                <button
-                                    onClick={handleCancelTrim}
-                                    className="px-6 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={handleSaveTrim}
-                                    className="px-6 py-2.5 rounded-lg text-sm font-bold bg-yellow-400 text-black hover:bg-yellow-300 transition-colors"
-                                >
-                                    Save
-                                </button>
+                            <div className="flex items-center justify-between gap-3 p-4 border-t border-white/10 bg-zinc-900/50">
+                                {/* Progress indicator */}
+                                <div className="flex-1">
+                                    {isTrimming && (
+                                        <div className="flex items-center gap-2 text-sm text-yellow-400">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            <span>{trimProgress || "Processing..."}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={handleCancelTrim}
+                                        disabled={isTrimming}
+                                        className="px-6 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleSaveTrim}
+                                        disabled={isTrimming}
+                                        className="px-6 py-2.5 rounded-lg text-sm font-bold bg-yellow-400 text-black hover:bg-yellow-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {isTrimming ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Trimming...
+                                            </>
+                                        ) : (
+                                            "Save & Trim"
+                                        )}
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
