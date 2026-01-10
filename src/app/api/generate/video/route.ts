@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+// Increase runtime timeout for long video processing (Vercel Pro/Enterprise)
+export const maxDuration = 300; // 5 minutes
+
 // Wavespeed.ai API Configuration
 const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
 const WAVESPEED_RESULT_URL = "https://api.wavespeed.ai/api/v3/predictions";

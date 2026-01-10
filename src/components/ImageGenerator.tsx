@@ -245,6 +245,14 @@ export function ImageGenerator() {
             return;
         }
 
+        // Check file size (max 10MB for Vercel serverless functions)
+        const maxSizeMB = 10;
+        const fileSizeMB = videoFile.size / (1024 * 1024);
+        if (fileSizeMB > maxSizeMB) {
+            alert(`❌ Video file is too large (${fileSizeMB.toFixed(1)}MB).\n\nMaximum size: ${maxSizeMB}MB\n\nPlease compress the video or use a shorter clip.`);
+            return;
+        }
+
         setReferenceVideo(videoFile);
         const videoUrl = URL.createObjectURL(videoFile);
         setReferenceVideoPreview(videoUrl);
@@ -593,8 +601,11 @@ export function ImageGenerator() {
 
                                     {/* Duration Controls */}
                                     <div className="flex-1 space-y-4">
-                                        <div className="text-xs text-white/60">
-                                            Total Duration: <span className="text-pink-300 font-medium">{formatTime(videoDuration)}</span>
+                                        <div className="flex items-center justify-between text-xs text-white/60">
+                                            <span>Total Duration: <span className="text-pink-300 font-medium">{formatTime(videoDuration)}</span></span>
+                                            {referenceVideo && (
+                                                <span>Size: <span className="text-yellow-400 font-medium">{(referenceVideo.size / (1024 * 1024)).toFixed(1)}MB</span></span>
+                                            )}
                                         </div>
 
                                         {/* Start Time Slider */}
