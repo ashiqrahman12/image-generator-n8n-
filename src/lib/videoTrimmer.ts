@@ -5,8 +5,19 @@ let loaded = false;
 let loading = false;
 
 /**
+ * Check if SharedArrayBuffer is available
+ */
+function isSharedArrayBufferAvailable(): boolean {
+    try {
+        return typeof SharedArrayBuffer !== 'undefined';
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Initialize FFmpeg.wasm - loads the WebAssembly modules from CDN
- * Uses dynamic import to avoid Next.js bundling issues
+ * Uses single-threaded version to avoid SharedArrayBuffer requirement
  */
 export async function initFFmpeg(
     onProgress?: (message: string) => void
@@ -26,7 +37,7 @@ export async function initFFmpeg(
     loading = true;
 
     try {
-        onProgress?.("Loading FFmpeg modules...");
+        onProgress?.("Loading FFmpeg...");
 
         // Dynamic import to avoid Next.js bundling issues
         const { FFmpeg } = await import("@ffmpeg/ffmpeg");
@@ -39,18 +50,20 @@ export async function initFFmpeg(
             console.log("[FFmpeg]", message);
         });
 
-        ffmpeg.on("progress", ({ progress, time }: { progress: number; time: number }) => {
+        ffmpeg.on("progress", ({ progress }: { progress: number }) => {
             const percent = Math.round(progress * 100);
-            onProgress?.(`Processing: ${percent}%`);
+            onProgress?.(`Trimming: ${percent}%`);
         });
 
-        onProgress?.("Downloading FFmpeg core...");
+        onProgress?.("Downloading FFmpeg (first time only)...");
 
-        // Load FFmpeg core from CDN - use umd version for better compatibility
-        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+        // Use single-threaded core to avoid SharedArrayBuffer requirement
+        // This works without COOP/COEP headers
+        const coreBaseURL = "https://unpkg.com/@ffmpeg/core-st@0.12.6/dist/umd";
+
         await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+            coreURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.js`, "text/javascript"),
+            wasmURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.wasm`, "application/wasm"),
         });
 
         loaded = true;
@@ -59,7 +72,7 @@ export async function initFFmpeg(
         return true;
     } catch (error) {
         console.error("Failed to load FFmpeg:", error);
-        onProgress?.(`Failed to load FFmpeg: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        onProgress?.(`FFmpeg load failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         loading = false;
         return false;
     }
@@ -95,15 +108,14 @@ export async function trimVideo(
             }
         }
 
-        onProgress?.("Reading video file...");
+        onProgress?.("Reading video...");
 
         // Dynamic import fetchFile
         const { fetchFile } = await import("@ffmpeg/util");
 
-        // Get file extension
-        const extension = videoFile.name.split('.').pop()?.toLowerCase() || 'mp4';
-        const inputFileName = `input.${extension}`;
-        const outputFileName = `output.${extension}`;
+        // Use mp4 for output for maximum compatibility
+        const inputFileName = `input_${Date.now()}.mp4`;
+        const outputFileName = `output_${Date.now()}.mp4`;
 
         // Write input file to FFmpeg virtual file system
         const fileData = await fetchFile(videoFile);
@@ -116,28 +128,41 @@ export async function trimVideo(
         // -t: duration
         // -c copy: copy codec (fast, no re-encoding)
         await ffmpeg.exec([
-            "-ss", startTime.toString(),
+            "-ss", startTime.toFixed(2),
             "-i", inputFileName,
-            "-t", duration.toString(),
+            "-t", duration.toFixed(2),
             "-c", "copy",
             "-avoid_negative_ts", "make_zero",
+            "-movflags", "+faststart",
             outputFileName
         ]);
 
-        onProgress?.("Reading trimmed video...");
+        onProgress?.("Saving trimmed video...");
 
         // Read the output file
         const data = await ffmpeg.readFile(outputFileName);
 
-        // Clean up files
-        await ffmpeg.deleteFile(inputFileName);
-        await ffmpeg.deleteFile(outputFileName);
+        // Clean up files from virtual file system
+        try {
+            await ffmpeg.deleteFile(inputFileName);
+            await ffmpeg.deleteFile(outputFileName);
+        } catch (e) {
+            console.warn("Cleanup warning:", e);
+        }
 
         // Create new File from the output
-        const uint8Array = new Uint8Array(data as ArrayBuffer);
-        const trimmedBlob = new Blob([uint8Array], { type: videoFile.type || 'video/mp4' });
-        const trimmedFile = new File([trimmedBlob], `trimmed_${videoFile.name}`, {
-            type: videoFile.type || 'video/mp4',
+        let blobData: Uint8Array;
+        if (data instanceof Uint8Array) {
+            blobData = data;
+        } else if (typeof data === 'string') {
+            blobData = new TextEncoder().encode(data);
+        } else {
+            blobData = new Uint8Array(data as ArrayBuffer);
+        }
+
+        const trimmedBlob = new Blob([blobData], { type: 'video/mp4' });
+        const trimmedFile = new File([trimmedBlob], `trimmed_video.mp4`, {
+            type: 'video/mp4',
             lastModified: Date.now()
         });
 
@@ -145,10 +170,12 @@ export async function trimVideo(
         const trimmedSizeMB = (trimmedFile.size / (1024 * 1024)).toFixed(1);
         onProgress?.(`Done! ${originalSizeMB}MB → ${trimmedSizeMB}MB`);
 
+        console.log(`[VideoTrimmer] Trimmed: ${originalSizeMB}MB → ${trimmedSizeMB}MB`);
+
         return trimmedFile;
     } catch (error) {
         console.error("Failed to trim video:", error);
-        onProgress?.(`Error: ${error instanceof Error ? error.message : "Failed to trim"}`);
+        onProgress?.(`Trim error: ${error instanceof Error ? error.message : "Unknown error"}`);
         return null;
     }
 }
