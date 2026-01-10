@@ -249,6 +249,13 @@ export function ImageGenerator() {
         }
 
         const fileSizeMB = videoFile.size / (1024 * 1024);
+
+        // Strict file size limit - API can't handle large files
+        if (fileSizeMB > 10) {
+            alert(`❌ Video file is too large (${fileSizeMB.toFixed(1)}MB).\n\nMaximum: 10MB\n\nPlease compress your video or use a shorter, smaller file.\n\nTip: Use a video compressor tool or screen recorder to make a shorter clip.`);
+            return;
+        }
+
         const videoUrl = URL.createObjectURL(videoFile);
 
         // Get video duration to decide if we need trim modal
@@ -257,15 +264,15 @@ export function ImageGenerator() {
         tempVideo.onloadedmetadata = () => {
             const duration = tempVideo.duration;
 
-            // If video is under 30s AND under 10MB, accept directly
-            if (duration <= 30 && fileSizeMB <= 10) {
+            // If video is under 30s, accept directly
+            if (duration <= 30) {
                 setReferenceVideo(videoFile);
                 setReferenceVideoPreview(videoUrl);
                 setVideoDuration(duration);
                 setVideoStartTime(0);
                 setVideoEndTime(duration);
             } else {
-                // Video needs trimming - show modal
+                // Video needs trimming - show modal for 30s selection
                 setTempVideoFile(videoFile);
                 setTempVideoPreview(videoUrl);
                 setVideoDuration(duration);
