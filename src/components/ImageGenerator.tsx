@@ -125,6 +125,9 @@ export function ImageGenerator() {
     const [videoDuration, setVideoDuration] = useState<number>(0);
     const [videoStartTime, setVideoStartTime] = useState<number>(0);
     const [videoEndTime, setVideoEndTime] = useState<number>(0);
+    const [showTrimModal, setShowTrimModal] = useState(false);
+    const [tempVideoFile, setTempVideoFile] = useState<File | null>(null);
+    const [tempVideoPreview, setTempVideoPreview] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [selectedStyle, setSelectedStyle] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>("");
@@ -245,28 +248,56 @@ export function ImageGenerator() {
             return;
         }
 
-        // Check file size (max 10MB for Vercel serverless functions)
-        const maxSizeMB = 10;
         const fileSizeMB = videoFile.size / (1024 * 1024);
-        if (fileSizeMB > maxSizeMB) {
-            alert(`❌ Video file is too large (${fileSizeMB.toFixed(1)}MB).\n\nMaximum size: ${maxSizeMB}MB\n\nPlease compress the video or use a shorter clip.`);
-            return;
-        }
-
-        setReferenceVideo(videoFile);
         const videoUrl = URL.createObjectURL(videoFile);
-        setReferenceVideoPreview(videoUrl);
 
-        // Get video duration and auto-set 30s segment
+        // Get video duration to decide if we need trim modal
         const tempVideo = document.createElement('video');
         tempVideo.src = videoUrl;
         tempVideo.onloadedmetadata = () => {
             const duration = tempVideo.duration;
-            setVideoDuration(duration);
-            setVideoStartTime(0);
-            // Auto-set end time to 30s or video duration (whichever is smaller)
-            setVideoEndTime(Math.min(30, duration));
+
+            // If video is under 30s AND under 10MB, accept directly
+            if (duration <= 30 && fileSizeMB <= 10) {
+                setReferenceVideo(videoFile);
+                setReferenceVideoPreview(videoUrl);
+                setVideoDuration(duration);
+                setVideoStartTime(0);
+                setVideoEndTime(duration);
+            } else {
+                // Video needs trimming - show modal
+                setTempVideoFile(videoFile);
+                setTempVideoPreview(videoUrl);
+                setVideoDuration(duration);
+                setVideoStartTime(0);
+                setVideoEndTime(Math.min(30, duration));
+                setShowTrimModal(true);
+            }
         };
+    };
+
+    // Save trimmed video selection from modal
+    const handleSaveTrim = () => {
+        if (tempVideoFile && tempVideoPreview) {
+            setReferenceVideo(tempVideoFile);
+            setReferenceVideoPreview(tempVideoPreview);
+            setShowTrimModal(false);
+            setTempVideoFile(null);
+            setTempVideoPreview(null);
+        }
+    };
+
+    // Cancel trim modal
+    const handleCancelTrim = () => {
+        if (tempVideoPreview) {
+            URL.revokeObjectURL(tempVideoPreview);
+        }
+        setShowTrimModal(false);
+        setTempVideoFile(null);
+        setTempVideoPreview(null);
+        setVideoDuration(0);
+        setVideoStartTime(0);
+        setVideoEndTime(0);
     };
 
     const removeReferenceVideo = () => {
@@ -1083,6 +1114,140 @@ export function ImageGenerator() {
                                 >
                                     <Download className="w-4 h-4" />
                                     Download
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+
+                {/* Video Trim Modal */}
+                {showTrimModal && tempVideoPreview && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+                        onClick={handleCancelTrim}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-xl bg-zinc-900 rounded-2xl overflow-hidden shadow-2xl border border-white/10"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Header */}
+                            <div className="flex items-center justify-between p-4 border-b border-white/10">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white">Upload your video</h3>
+                                    <p className="text-sm text-white/50">Select a 30-second segment for use in generation</p>
+                                </div>
+                                <button
+                                    onClick={handleCancelTrim}
+                                    className="p-2 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            {/* Video Preview */}
+                            <div className="p-4">
+                                <div className="w-full aspect-video rounded-xl overflow-hidden bg-black mb-4">
+                                    <video
+                                        ref={videoPreviewRef}
+                                        src={tempVideoPreview}
+                                        className="w-full h-full object-contain"
+                                        onTimeUpdate={() => {
+                                            if (videoPreviewRef.current) {
+                                                const currentTime = videoPreviewRef.current.currentTime;
+                                                if (currentTime < videoStartTime || currentTime > videoStartTime + 30) {
+                                                    videoPreviewRef.current.currentTime = videoStartTime;
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Timeline Controls */}
+                                <div className="flex items-center gap-3 mb-4">
+                                    <button
+                                        onClick={() => {
+                                            if (videoPreviewRef.current) {
+                                                if (videoPreviewRef.current.paused) {
+                                                    videoPreviewRef.current.currentTime = videoStartTime;
+                                                    videoPreviewRef.current.play();
+                                                } else {
+                                                    videoPreviewRef.current.pause();
+                                                }
+                                            }
+                                        }}
+                                        className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
+                                    >
+                                        <Play className="w-5 h-5 text-white" />
+                                    </button>
+
+                                    {/* Timeline Slider */}
+                                    <div className="flex-1 relative">
+                                        {/* Time labels */}
+                                        <div className="flex items-center justify-between text-xs text-white/50 mb-2">
+                                            <span className="font-mono text-green-400">{formatTime(videoStartTime)}</span>
+                                            <span className="font-mono">{formatTime(videoDuration)}</span>
+                                        </div>
+
+                                        {/* Selection slider with visual track */}
+                                        <div className="relative h-12 bg-zinc-800 rounded-lg overflow-hidden">
+                                            {/* Selected 30s window highlight */}
+                                            <div
+                                                className="absolute top-0 bottom-0 bg-gradient-to-r from-purple-500/50 to-pink-500/50 border-x-4 border-yellow-400"
+                                                style={{
+                                                    left: `${(videoStartTime / videoDuration) * 100}%`,
+                                                    width: `${(Math.min(30, videoDuration - videoStartTime) / videoDuration) * 100}%`
+                                                }}
+                                            />
+
+                                            {/* Range input */}
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={Math.max(0, videoDuration - 30)}
+                                                step={0.5}
+                                                value={videoStartTime}
+                                                onChange={(e) => {
+                                                    const start = parseFloat(e.target.value);
+                                                    setVideoStartTime(start);
+                                                    setVideoEndTime(Math.min(start + 30, videoDuration));
+                                                    if (videoPreviewRef.current) {
+                                                        videoPreviewRef.current.currentTime = start;
+                                                    }
+                                                }}
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Info */}
+                                <div className="text-center text-sm text-white/60 mb-4">
+                                    Selected: <span className="text-pink-400 font-bold">{formatTime(videoStartTime)}</span>
+                                    <span className="mx-2">→</span>
+                                    <span className="text-pink-400 font-bold">{formatTime(Math.min(videoStartTime + 30, videoDuration))}</span>
+                                    <span className="ml-2 text-green-400 font-medium">(30 seconds)</span>
+                                </div>
+                            </div>
+
+                            {/* Footer with buttons */}
+                            <div className="flex items-center justify-end gap-3 p-4 border-t border-white/10 bg-zinc-900/50">
+                                <button
+                                    onClick={handleCancelTrim}
+                                    className="px-6 py-2.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveTrim}
+                                    className="px-6 py-2.5 rounded-lg text-sm font-bold bg-yellow-400 text-black hover:bg-yellow-300 transition-colors"
+                                >
+                                    Save
                                 </button>
                             </div>
                         </motion.div>
