@@ -120,6 +120,14 @@ async function handleKlingMotionControl(formData: FormData) {
         keep_original_sound: keepOriginalSound
     };
 
+    console.log("Kling Motion Control payload:", {
+        imageSize: imageDataUrl.length,
+        videoSize: videoDataUrl.length,
+        prompt: prompt,
+        negative_prompt: negativePrompt,
+        character_orientation: characterOrientation,
+        keep_original_sound: keepOriginalSound
+    });
     console.log("Sending to Kling Motion Control API...");
 
     const response = await fetch(

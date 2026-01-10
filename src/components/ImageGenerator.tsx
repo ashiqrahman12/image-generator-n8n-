@@ -320,14 +320,21 @@ export function ImageGenerator() {
                     method: "POST",
                     body: formData,
                 });
-                const data = await res.json();
 
-                if (data.videoUrls?.length) {
+                console.log("Video API response status:", res.status);
+                const data = await res.json();
+                console.log("Video API response data:", data);
+
+                if (!res.ok) {
+                    console.error("Video API error:", data);
+                    alert(`❌ Error: ${data.error || 'Unknown error occurred'}`);
+                } else if (data.videoUrls?.length) {
                     setGeneratedVideo(data.videoUrls[0]);
                     alert("✅ Video generated successfully!");
                 } else if (data.error) {
                     alert(`❌ ${data.error}`);
                 } else {
+                    console.error("Unexpected response:", data);
                     alert("❌ Video generation failed. Please try again.");
                 }
             } else {
@@ -382,7 +389,8 @@ export function ImageGenerator() {
             }
         } catch (error) {
             console.error("Generation failed:", error);
-            alert("❌ Generation failed. Please try again.");
+            const errorMessage = error instanceof Error ? error.message : "Unknown error";
+            alert(`❌ Generation failed: ${errorMessage}`);
         } finally {
             setLoading(false);
         }
