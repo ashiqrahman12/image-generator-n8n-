@@ -336,9 +336,53 @@ export function ImageGenerator() {
                 if (!res.ok) {
                     console.error("Video API error:", data);
                     alert(`❌ Error: ${data.error || 'Unknown error occurred'}`);
-                } else if (data.videoUrls?.length) {
-                    setGeneratedVideo(data.videoUrls[0]);
-                    alert("✅ Video generated successfully!");
+                } else if (data.requestId) {
+                    // Got requestId - now poll for result
+                    console.log("Video job submitted, polling for result...", data.requestId);
+
+                    // Poll for result from client side
+                    const pollForResult = async (requestId: string): Promise<string[]> => {
+                        let attempt = 0;
+                        while (true) {
+                            attempt++;
+                            console.log(`Polling attempt ${attempt}...`);
+
+                            try {
+                                const pollRes = await fetch(`/api/generate/video/poll?requestId=${requestId}`);
+                                const pollData = await pollRes.json();
+
+                                console.log(`Poll response:`, pollData);
+
+                                if (pollData.status === 'completed') {
+                                    return pollData.videoUrls || [];
+                                } else if (pollData.status === 'failed') {
+                                    throw new Error(pollData.error || 'Video generation failed');
+                                } else if (pollData.status === 'error') {
+                                    throw new Error(pollData.error || 'Polling error');
+                                }
+                                // Still processing - wait and retry
+                            } catch (pollError) {
+                                console.error("Poll error:", pollError);
+                                throw pollError;
+                            }
+
+                            // Wait 5 seconds before next poll
+                            await new Promise(resolve => setTimeout(resolve, 5000));
+                        }
+                    };
+
+                    try {
+                        const videoUrls = await pollForResult(data.requestId);
+                        if (videoUrls.length > 0) {
+                            setGeneratedVideo(videoUrls[0]);
+                            alert("✅ Video generated successfully!");
+                        } else {
+                            alert("❌ No video output received.");
+                        }
+                    } catch (pollError) {
+                        console.error("Polling failed:", pollError);
+                        alert(`❌ ${pollError instanceof Error ? pollError.message : 'Video generation failed'}`);
+                    }
                 } else if (data.error) {
                     alert(`❌ ${data.error}`);
                 } else {

@@ -1,48 +1,13 @@
 import { NextResponse } from "next/server";
 
-// Increase runtime timeout for long video processing (Vercel Pro/Enterprise)
-export const maxDuration = 300; // 5 minutes
-
 // Wavespeed.ai API Configuration
 const WAVESPEED_API_KEY = process.env.WAVESPEED_API_KEY;
-const WAVESPEED_RESULT_URL = "https://api.wavespeed.ai/api/v3/predictions";
 
 // Helper function to convert File to base64 data URL
 async function fileToDataUrl(file: File): Promise<string> {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = Buffer.from(arrayBuffer).toString("base64");
     return `data:${file.type};base64,${base64}`;
-}
-
-// Helper function to poll for result (no timeout - waits indefinitely)
-async function pollForResult(requestId: string): Promise<string[]> {
-    const headers = {
-        "Authorization": `Bearer ${WAVESPEED_API_KEY}`
-    };
-
-    let attempt = 0;
-    while (true) {
-        attempt++;
-        const response = await fetch(`${WAVESPEED_RESULT_URL}/${requestId}/result`, { headers });
-        const result = await response.json();
-
-        if (response.ok) {
-            const data = result.data;
-            const status = data.status;
-
-            if (status === "completed") {
-                return data.outputs || [];
-            } else if (status === "failed") {
-                throw new Error(`Video generation failed: ${data.error || "Unknown error"}`);
-            }
-            console.log(`Video generation status: ${status}, attempt ${attempt}`);
-        } else {
-            throw new Error(`Polling error: ${response.status} - ${JSON.stringify(result)}`);
-        }
-
-        // Wait 3 seconds before next poll (video takes longer)
-        await new Promise(resolve => setTimeout(resolve, 3000));
-    }
 }
 
 export async function POST(req: Request) {
@@ -83,7 +48,7 @@ export async function POST(req: Request) {
     }
 }
 
-// Kling 2.6 Motion Control Handler
+// Kling 2.6 Motion Control Handler - Returns immediately with requestId
 async function handleKlingMotionControl(formData: FormData) {
     const imageFile = formData.get("image") as File | null;
     const videoFile = formData.get("video") as File | null;
@@ -160,17 +125,10 @@ async function handleKlingMotionControl(formData: FormData) {
 
     console.log(`Kling video task submitted. Request ID: ${requestId}`);
 
-    // Poll for result (video generation takes longer)
-    const outputUrls = await pollForResult(requestId);
-
-    if (outputUrls.length === 0) {
-        throw new Error("No output videos returned");
-    }
-
-    console.log("Kling video completed. Output URLs:", outputUrls);
-
+    // Return immediately with requestId - client will poll for result
     return NextResponse.json({
-        videoUrls: outputUrls,
-        type: 'video'
+        requestId: requestId,
+        status: 'processing',
+        message: 'Video generation started. Polling for result...'
     });
 }
