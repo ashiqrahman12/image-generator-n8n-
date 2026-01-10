@@ -257,14 +257,15 @@ export function ImageGenerator() {
         const videoUrl = URL.createObjectURL(videoFile);
         setReferenceVideoPreview(videoUrl);
 
-        // Get video duration
+        // Get video duration and auto-set 30s segment
         const tempVideo = document.createElement('video');
         tempVideo.src = videoUrl;
         tempVideo.onloadedmetadata = () => {
             const duration = tempVideo.duration;
             setVideoDuration(duration);
             setVideoStartTime(0);
-            setVideoEndTime(duration);
+            // Auto-set end time to 30s or video duration (whichever is smaller)
+            setVideoEndTime(Math.min(30, duration));
         };
     };
 
@@ -618,91 +619,118 @@ export function ImageGenerator() {
 
                         {/* Video Reference Preview (for video models) */}
                         {selectedModel.type === 'video' && referenceVideoPreview && (
-                            <div className="mb-3 p-3 bg-pink-900/20 border border-pink-500/30 rounded-xl">
-                                <div className="flex items-center justify-between mb-3">
-                                    <p className="text-xs text-pink-300 font-medium flex items-center gap-2">
-                                        <Video className="w-4 h-4" />
-                                        Motion Reference Video
-                                    </p>
+                            <div className="mb-3 p-4 bg-zinc-900/90 border border-white/10 rounded-2xl">
+                                {/* Header */}
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <p className="text-sm text-white font-medium">Upload your video</p>
+                                        <p className="text-xs text-white/50">Select a 30-second segment for use in generation</p>
+                                    </div>
                                     <button
                                         onClick={removeReferenceVideo}
-                                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                                        className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                                     >
-                                        Remove
+                                        <X className="w-4 h-4" />
                                     </button>
                                 </div>
 
-                                {/* Square Video Preview */}
-                                <div className="flex gap-4 items-start">
-                                    <div className="w-40 h-40 md:w-48 md:h-48 rounded-xl overflow-hidden bg-black/50 flex-shrink-0">
-                                        <video
-                                            ref={videoPreviewRef}
-                                            src={referenceVideoPreview}
-                                            controls
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
+                                {/* Large Video Preview */}
+                                <div className="w-full aspect-video rounded-xl overflow-hidden bg-black mb-4">
+                                    <video
+                                        ref={videoPreviewRef}
+                                        src={referenceVideoPreview}
+                                        className="w-full h-full object-contain"
+                                        onTimeUpdate={() => {
+                                            // Keep video within selected range
+                                            if (videoPreviewRef.current) {
+                                                const currentTime = videoPreviewRef.current.currentTime;
+                                                if (currentTime < videoStartTime || currentTime > videoStartTime + 30) {
+                                                    videoPreviewRef.current.currentTime = videoStartTime;
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
 
-                                    {/* Duration Controls */}
-                                    <div className="flex-1 space-y-4">
-                                        <div className="flex items-center justify-between text-xs text-white/60">
-                                            <span>Total Duration: <span className="text-pink-300 font-medium">{formatTime(videoDuration)}</span></span>
-                                            {referenceVideo && (
-                                                <span>Size: <span className="text-yellow-400 font-medium">{(referenceVideo.size / (1024 * 1024)).toFixed(1)}MB</span></span>
-                                            )}
+                                {/* Play button and Timeline */}
+                                <div className="flex items-center gap-3 mb-4">
+                                    <button
+                                        onClick={() => {
+                                            if (videoPreviewRef.current) {
+                                                if (videoPreviewRef.current.paused) {
+                                                    videoPreviewRef.current.currentTime = videoStartTime;
+                                                    videoPreviewRef.current.play();
+                                                } else {
+                                                    videoPreviewRef.current.pause();
+                                                }
+                                            }
+                                        }}
+                                        className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                                    >
+                                        <Play className="w-5 h-5 text-white" />
+                                    </button>
+
+                                    {/* Timeline with 30s selection window */}
+                                    <div className="flex-1 relative">
+                                        {/* Time labels */}
+                                        <div className="flex items-center justify-between text-xs text-white/50 mb-1">
+                                            <span className="font-mono text-green-400">{formatTime(videoStartTime)}</span>
+                                            <span className="text-pink-300 font-medium">30s segment</span>
+                                            <span className="font-mono">{formatTime(videoDuration)}</span>
                                         </div>
 
-                                        {/* Start Time Slider */}
-                                        <div className="space-y-1">
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-white/60">Start Time</span>
-                                                <span className="text-green-400 font-mono">{formatTime(videoStartTime)}</span>
+                                        {/* Selection slider */}
+                                        <div className="relative h-10">
+                                            {/* Background track */}
+                                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-8 bg-zinc-800 rounded-lg overflow-hidden">
+                                                {/* Selected 30s window highlight */}
+                                                <div
+                                                    className="absolute top-0 bottom-0 bg-gradient-to-r from-purple-500/40 to-pink-500/40 border-2 border-pink-500 rounded-lg"
+                                                    style={{
+                                                        left: `${(videoStartTime / videoDuration) * 100}%`,
+                                                        width: `${(Math.min(30, videoDuration - videoStartTime) / videoDuration) * 100}%`
+                                                    }}
+                                                />
                                             </div>
+
+                                            {/* Range input for start position */}
                                             <input
                                                 type="range"
                                                 min={0}
-                                                max={videoDuration}
-                                                step={0.1}
+                                                max={Math.max(0, videoDuration - 30)}
+                                                step={0.5}
                                                 value={videoStartTime}
                                                 onChange={(e) => {
-                                                    const val = parseFloat(e.target.value);
-                                                    if (val < videoEndTime) {
-                                                        setVideoStartTime(val);
+                                                    const start = parseFloat(e.target.value);
+                                                    setVideoStartTime(start);
+                                                    setVideoEndTime(Math.min(start + 30, videoDuration));
+                                                    // Seek video to start of selection
+                                                    if (videoPreviewRef.current) {
+                                                        videoPreviewRef.current.currentTime = start;
                                                     }
                                                 }}
-                                                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                             />
-                                        </div>
-
-                                        {/* End Time Slider */}
-                                        <div className="space-y-1">
-                                            <div className="flex items-center justify-between text-xs">
-                                                <span className="text-white/60">End Time</span>
-                                                <span className="text-red-400 font-mono">{formatTime(videoEndTime)}</span>
-                                            </div>
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={videoDuration}
-                                                step={0.1}
-                                                value={videoEndTime}
-                                                onChange={(e) => {
-                                                    const val = parseFloat(e.target.value);
-                                                    if (val > videoStartTime) {
-                                                        setVideoEndTime(val);
-                                                    }
-                                                }}
-                                                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"
-                                            />
-                                        </div>
-
-                                        {/* Selected Duration */}
-                                        <div className="pt-2 border-t border-white/10">
-                                            <div className="text-xs text-white/60">
-                                                Selected Duration: <span className="text-pink-300 font-bold">{formatTime(videoEndTime - videoStartTime)}</span>
-                                            </div>
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Info row */}
+                                <div className="flex items-center justify-between text-xs text-white/50 pt-3 border-t border-white/10">
+                                    <span>
+                                        Size: <span className={`font-medium ${referenceVideo && referenceVideo.size / (1024 * 1024) > 10 ? 'text-red-400' : 'text-green-400'}`}>
+                                            {referenceVideo ? `${(referenceVideo.size / (1024 * 1024)).toFixed(1)}MB` : '0MB'}
+                                        </span>
+                                        {referenceVideo && referenceVideo.size / (1024 * 1024) > 10 && (
+                                            <span className="text-red-400 ml-2">(max 10MB)</span>
+                                        )}
+                                    </span>
+                                    <span>
+                                        Selected: <span className="text-pink-300 font-bold">{formatTime(videoStartTime)}</span>
+                                        <span className="mx-1">→</span>
+                                        <span className="text-pink-300 font-bold">{formatTime(Math.min(videoStartTime + 30, videoDuration))}</span>
+                                        <span className="ml-2 text-green-400">(30s)</span>
+                                    </span>
                                 </div>
                             </div>
                         )}
