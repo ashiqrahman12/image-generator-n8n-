@@ -648,120 +648,75 @@ export function ImageGenerator() {
                             </div>
                         )}
 
-                        {/* Video Reference Preview (for video models) */}
-                        {selectedModel.type === 'video' && referenceVideoPreview && (
-                            <div className="mb-3 p-4 bg-zinc-900/90 border border-white/10 rounded-2xl">
-                                {/* Header */}
-                                <div className="flex items-center justify-between mb-4">
-                                    <div>
-                                        <p className="text-sm text-white font-medium">Upload your video</p>
-                                        <p className="text-xs text-white/50">Select a 30-second segment for use in generation</p>
-                                    </div>
-                                    <button
-                                        onClick={removeReferenceVideo}
-                                        className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                                    >
-                                        <X className="w-4 h-4" />
-                                    </button>
-                                </div>
-
-                                {/* Large Video Preview */}
-                                <div className="w-full aspect-video rounded-xl overflow-hidden bg-black mb-4">
-                                    <video
-                                        ref={videoPreviewRef}
-                                        src={referenceVideoPreview}
-                                        className="w-full h-full object-contain"
-                                        onTimeUpdate={() => {
-                                            // Keep video within selected range
-                                            if (videoPreviewRef.current) {
-                                                const currentTime = videoPreviewRef.current.currentTime;
-                                                if (currentTime < videoStartTime || currentTime > videoStartTime + 30) {
-                                                    videoPreviewRef.current.currentTime = videoStartTime;
-                                                }
-                                            }
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Play button and Timeline */}
-                                <div className="flex items-center gap-3 mb-4">
-                                    <button
-                                        onClick={() => {
-                                            if (videoPreviewRef.current) {
-                                                if (videoPreviewRef.current.paused) {
-                                                    videoPreviewRef.current.currentTime = videoStartTime;
-                                                    videoPreviewRef.current.play();
-                                                } else {
-                                                    videoPreviewRef.current.pause();
-                                                }
-                                            }
-                                        }}
-                                        className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                                    >
-                                        <Play className="w-5 h-5 text-white" />
-                                    </button>
-
-                                    {/* Timeline with 30s selection window */}
-                                    <div className="flex-1 relative">
-                                        {/* Time labels */}
-                                        <div className="flex items-center justify-between text-xs text-white/50 mb-1">
-                                            <span className="font-mono text-green-400">{formatTime(videoStartTime)}</span>
-                                            <span className="text-pink-300 font-medium">30s segment</span>
-                                            <span className="font-mono">{formatTime(videoDuration)}</span>
-                                        </div>
-
-                                        {/* Selection slider */}
-                                        <div className="relative h-10">
-                                            {/* Background track */}
-                                            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-8 bg-zinc-800 rounded-lg overflow-hidden">
-                                                {/* Selected 30s window highlight */}
-                                                <div
-                                                    className="absolute top-0 bottom-0 bg-gradient-to-r from-purple-500/40 to-pink-500/40 border-2 border-pink-500 rounded-lg"
-                                                    style={{
-                                                        left: `${(videoStartTime / videoDuration) * 100}%`,
-                                                        width: `${(Math.min(30, videoDuration - videoStartTime) / videoDuration) * 100}%`
-                                                    }}
+                        {/* Compact Image & Video Preview Row (for video models) */}
+                        {selectedModel.type === 'video' && (referenceImages.length > 0 || referenceVideoPreview) && (
+                            <div className="mb-3 p-2 bg-zinc-800/50 rounded-xl">
+                                <div className="flex items-center gap-3">
+                                    {/* Image Preview Square */}
+                                    {referenceImages.length > 0 ? (
+                                        <div className="relative group">
+                                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 border-purple-500/50 bg-black">
+                                                <img
+                                                    src={referenceImages[0].preview}
+                                                    alt="Character"
+                                                    className="w-full h-full object-cover"
                                                 />
                                             </div>
-
-                                            {/* Range input for start position */}
-                                            <input
-                                                type="range"
-                                                min={0}
-                                                max={Math.max(0, videoDuration - 30)}
-                                                step={0.5}
-                                                value={videoStartTime}
-                                                onChange={(e) => {
-                                                    const start = parseFloat(e.target.value);
-                                                    setVideoStartTime(start);
-                                                    setVideoEndTime(Math.min(start + 30, videoDuration));
-                                                    // Seek video to start of selection
-                                                    if (videoPreviewRef.current) {
-                                                        videoPreviewRef.current.currentTime = start;
-                                                    }
-                                                }}
-                                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                            />
+                                            <button
+                                                onClick={() => removeReferenceImage(referenceImages[0].id)}
+                                                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3 text-white" />
+                                            </button>
+                                            <p className="text-[9px] text-center text-purple-300 mt-1">Character</p>
                                         </div>
-                                    </div>
-                                </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="w-16 h-16 md:w-20 md:h-20 rounded-lg border-2 border-dashed border-purple-500/50 flex flex-col items-center justify-center text-purple-400 hover:border-purple-400 hover:text-purple-300 transition-colors"
+                                        >
+                                            <Plus className="w-5 h-5" />
+                                            <span className="text-[9px] mt-1">Image</span>
+                                        </button>
+                                    )}
 
-                                {/* Info row */}
-                                <div className="flex items-center justify-between text-xs text-white/50 pt-3 border-t border-white/10">
-                                    <span>
-                                        Size: <span className={`font-medium ${referenceVideo && referenceVideo.size / (1024 * 1024) > 10 ? 'text-red-400' : 'text-green-400'}`}>
-                                            {referenceVideo ? `${(referenceVideo.size / (1024 * 1024)).toFixed(1)}MB` : '0MB'}
-                                        </span>
-                                        {referenceVideo && referenceVideo.size / (1024 * 1024) > 10 && (
-                                            <span className="text-red-400 ml-2">(max 10MB)</span>
+                                    {/* Video Preview Square */}
+                                    {referenceVideoPreview ? (
+                                        <div className="relative group">
+                                            <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 border-pink-500/50 bg-black">
+                                                <video
+                                                    src={referenceVideoPreview}
+                                                    className="w-full h-full object-cover"
+                                                    muted
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={removeReferenceVideo}
+                                                className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X className="w-3 h-3 text-white" />
+                                            </button>
+                                            <p className="text-[9px] text-center text-pink-300 mt-1">Motion</p>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => videoInputRef.current?.click()}
+                                            className="w-16 h-16 md:w-20 md:h-20 rounded-lg border-2 border-dashed border-pink-500/50 flex flex-col items-center justify-center text-pink-400 hover:border-pink-400 hover:text-pink-300 transition-colors"
+                                        >
+                                            <Video className="w-5 h-5" />
+                                            <span className="text-[9px] mt-1">Video</span>
+                                        </button>
+                                    )}
+
+                                    {/* Info */}
+                                    <div className="flex-1 text-xs text-white/50">
+                                        {referenceVideoPreview && videoDuration > 0 && (
+                                            <div className="space-y-1">
+                                                <p>Duration: <span className="text-pink-300">{formatTime(videoDuration)}</span></p>
+                                                <p>Selected: <span className="text-green-400">{formatTime(videoStartTime)} → {formatTime(Math.min(videoStartTime + 30, videoDuration))}</span></p>
+                                            </div>
                                         )}
-                                    </span>
-                                    <span>
-                                        Selected: <span className="text-pink-300 font-bold">{formatTime(videoStartTime)}</span>
-                                        <span className="mx-1">→</span>
-                                        <span className="text-pink-300 font-bold">{formatTime(Math.min(videoStartTime + 30, videoDuration))}</span>
-                                        <span className="ml-2 text-green-400">(30s)</span>
-                                    </span>
+                                    </div>
                                 </div>
                             </div>
                         )}
