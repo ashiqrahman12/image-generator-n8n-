@@ -59,7 +59,7 @@ export async function initFFmpeg(
 
         // Use single-threaded core to avoid SharedArrayBuffer requirement
         // This works without COOP/COEP headers
-        const coreBaseURL = "https://unpkg.com/@ffmpeg/core-st@0.12.6/dist/umd";
+        const coreBaseURL = "https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/umd";
 
         await ffmpeg.load({
             coreURL: await toBlobURL(`${coreBaseURL}/ffmpeg-core.js`, "text/javascript"),
