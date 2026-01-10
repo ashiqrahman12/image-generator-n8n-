@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ModelProvider } from "@/context/ModelContext";
 
 const roboto = Roboto({
   weight: ['400', '500', '700'],
@@ -37,9 +38,12 @@ export default function RootLayout({
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         </head>
         <body className={`${roboto.variable} ${playfair.variable} antialiased bg-background text-foreground overflow-x-hidden`}>
-          {children}
+          <ModelProvider>
+            {children}
+          </ModelProvider>
         </body>
       </html>
     </ClerkProvider>
   );
 }
+

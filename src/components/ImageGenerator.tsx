@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
 import { saveImageToHistory } from "@/lib/supabase";
+import { useModel } from "@/context/ModelContext";
 import {
     Sparkles,
     Plus,
@@ -22,7 +23,9 @@ import {
     Trash2,
     Mic,
     MicOff,
-    Palette
+    Palette,
+    Video,
+    Play
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -106,20 +109,25 @@ const stylePresets = [
 
 export function ImageGenerator() {
     const { user } = useUser();
+    const { selectedModel } = useModel();
     const [prompt, setPrompt] = useState("");
     const [loading, setLoading] = useState(false);
     const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+    const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
     const [aspectRatio, setAspectRatio] = useState("1:1");
     const [quality, setQuality] = useState("1K");
     const [imageCount, setImageCount] = useState(1);
     const [showAspectDropdown, setShowAspectDropdown] = useState(false);
     const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
+    const [referenceVideo, setReferenceVideo] = useState<File | null>(null);
+    const [referenceVideoPreview, setReferenceVideoPreview] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [selectedStyle, setSelectedStyle] = useState<string>("");
     const [showStyleDropdown, setShowStyleDropdown] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoInputRef = useRef<HTMLInputElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
 
@@ -221,56 +229,130 @@ export function ImageGenerator() {
         }
     };
 
+    // Handle video file selection (for video models)
+    const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const videoFile = files[0];
+        if (!videoFile.type.startsWith('video/')) {
+            alert('Please select a video file');
+            return;
+        }
+
+        setReferenceVideo(videoFile);
+        setReferenceVideoPreview(URL.createObjectURL(videoFile));
+    };
+
+    const removeReferenceVideo = () => {
+        if (referenceVideoPreview) {
+            URL.revokeObjectURL(referenceVideoPreview);
+        }
+        setReferenceVideo(null);
+        setReferenceVideoPreview(null);
+    };
+
     const handleGenerate = async () => {
-        if (!prompt.trim() || loading) return;
+        if (loading) return;
         setLoading(true);
 
         try {
-            // Build FormData for API (matches what route.ts expects)
             const formData = new FormData();
-            formData.append("prompt", prompt);
-            formData.append("quality", quality.toLowerCase());
-            formData.append("aspectRatio", aspectRatio);
-            formData.append("outputFormat", "png");
-            formData.append("stylePreset", selectedStyle);
 
-            // Append reference images if selected
-            referenceImages.forEach((img, index) => {
-                formData.append(`referenceImage_${index}`, img.file);
-            });
-            formData.append("referenceImageCount", String(referenceImages.length));
+            // Route based on model type
+            if (selectedModel.type === 'video') {
+                // Video model generation
+                formData.append("modelId", selectedModel.id);
 
-            const res = await fetch("/api/generate", {
-                method: "POST",
-                body: formData, // FormData auto-sets Content-Type with boundary
-            });
-            const data = await res.json();
-
-            if (data.imageUrls?.length) {
-                // Save to Supabase for Gallery (linked to user account)
-                if (user?.id) {
-                    let savedCount = 0;
-                    for (const url of data.imageUrls) {
-                        const saved = await saveImageToHistory(
-                            user.id,
-                            url,
-                            prompt,
-                            selectedStyle || undefined
-                        );
-                        if (saved) savedCount++;
-                    }
-                    console.log("Saved to Supabase gallery:", savedCount, "images");
-                    alert(`✅ ${savedCount} image(s) generated and saved to Gallery!`);
+                // Add image for motion control
+                if (referenceImages.length > 0) {
+                    formData.append("image", referenceImages[0].file);
                 } else {
-                    console.warn("User not logged in, images not saved to gallery");
-                    alert("⚠️ Image generated but not saved. Please sign in to save to gallery.");
+                    alert("Please upload a character/subject image");
+                    setLoading(false);
+                    return;
+                }
+
+                // Add video for motion reference
+                if (referenceVideo) {
+                    formData.append("video", referenceVideo);
+                } else {
+                    alert("Please upload a motion reference video");
+                    setLoading(false);
+                    return;
+                }
+
+                // Add other options
+                formData.append("character_orientation", "video");
+                formData.append("keep_original_sound", "true");
+
+                const res = await fetch("/api/generate/video", {
+                    method: "POST",
+                    body: formData,
+                });
+                const data = await res.json();
+
+                if (data.videoUrls?.length) {
+                    setGeneratedVideo(data.videoUrls[0]);
+                    alert("✅ Video generated successfully!");
+                } else if (data.error) {
+                    alert(`❌ ${data.error}`);
+                } else {
+                    alert("❌ Video generation failed. Please try again.");
                 }
             } else {
-                console.warn("No imageUrls in API response:", data);
-                alert("❌ Generation failed. Please try again.");
+                // Image model generation (existing logic)
+                if (!prompt.trim()) {
+                    alert("Please enter a prompt");
+                    setLoading(false);
+                    return;
+                }
+
+                formData.append("prompt", prompt);
+                formData.append("quality", quality.toLowerCase());
+                formData.append("aspectRatio", aspectRatio);
+                formData.append("outputFormat", "png");
+                formData.append("stylePreset", selectedStyle);
+
+                referenceImages.forEach((img, index) => {
+                    formData.append(`referenceImage_${index}`, img.file);
+                });
+                formData.append("referenceImageCount", String(referenceImages.length));
+
+                const res = await fetch("/api/generate", {
+                    method: "POST",
+                    body: formData,
+                });
+                const data = await res.json();
+
+                if (data.imageUrls?.length) {
+                    if (user?.id) {
+                        let savedCount = 0;
+                        for (const url of data.imageUrls) {
+                            const saved = await saveImageToHistory(
+                                user.id,
+                                url,
+                                prompt,
+                                selectedStyle || undefined
+                            );
+                            if (saved) savedCount++;
+                        }
+                        console.log("Saved to Supabase gallery:", savedCount, "images");
+                        alert(`✅ ${savedCount} image(s) generated and saved to Gallery!`);
+                    } else {
+                        console.warn("User not logged in, images not saved to gallery");
+                        alert("⚠️ Image generated but not saved. Please sign in to save to gallery.");
+                    }
+                } else if (data.error) {
+                    alert(`❌ ${data.error}`);
+                } else {
+                    console.warn("No imageUrls in API response:", data);
+                    alert("❌ Generation failed. Please try again.");
+                }
             }
         } catch (error) {
             console.error("Generation failed:", error);
+            alert("❌ Generation failed. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -444,13 +526,43 @@ export function ImageGenerator() {
                             </div>
                         )}
 
-                        {/* Hidden File Input */}
+                        {/* Video Reference Preview (for video models) */}
+                        {selectedModel.type === 'video' && referenceVideoPreview && (
+                            <div className="mb-3 p-2 bg-pink-900/20 border border-pink-500/30 rounded-xl">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-xs text-pink-300 font-medium flex items-center gap-2">
+                                        <Video className="w-4 h-4" />
+                                        Motion Reference Video
+                                    </p>
+                                    <button
+                                        onClick={removeReferenceVideo}
+                                        className="text-[10px] text-red-400 hover:text-red-300 transition-colors"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                                <video
+                                    src={referenceVideoPreview}
+                                    controls
+                                    className="w-full max-h-32 rounded-lg object-cover"
+                                />
+                            </div>
+                        )}
+
+                        {/* Hidden File Inputs */}
                         <input
                             ref={fileInputRef}
                             type="file"
                             accept="image/*"
                             multiple
                             onChange={handleFileSelect}
+                            className="hidden"
+                        />
+                        <input
+                            ref={videoInputRef}
+                            type="file"
+                            accept="video/*"
+                            onChange={handleVideoSelect}
                             className="hidden"
                         />
 
@@ -652,7 +764,7 @@ export function ImageGenerator() {
                         {/* Input Row - Gemini Style */}
                         <div className="flex items-end gap-2 w-full max-w-full overflow-hidden">
                             <div className="flex items-end gap-2 flex-1 min-w-0 bg-zinc-800/50 rounded-2xl px-3 py-2.5 md:px-4 md:py-3">
-                                {/* Upload Button */}
+                                {/* Upload Image Button */}
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     className={cn(
@@ -666,6 +778,22 @@ export function ImageGenerator() {
                                 >
                                     <Plus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
+
+                                {/* Upload Video Button - Only for video models */}
+                                {selectedModel.type === 'video' && (
+                                    <button
+                                        onClick={() => videoInputRef.current?.click()}
+                                        className={cn(
+                                            "p-1 md:p-1.5 rounded-lg transition-all hover:scale-110 shrink-0 mb-0.5",
+                                            referenceVideo
+                                                ? "text-pink-400 bg-pink-500/20"
+                                                : "text-white/40 hover:text-white/70 hover:bg-white/10"
+                                        )}
+                                        title="Upload motion reference video"
+                                    >
+                                        <Video className="w-4 h-4 md:w-5 md:h-5" />
+                                    </button>
+                                )}
                                 <textarea
                                     ref={textareaRef}
                                     value={prompt}

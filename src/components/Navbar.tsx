@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Sparkles, LayoutGrid, Zap, Menu, X, ChevronRight, Star, Info, Mail, ArrowRight } from "lucide-react";
+import { Sparkles, LayoutGrid, Zap, Menu, X, ChevronRight, Star, Info, Mail, ArrowRight, Image as ImageIcon, Video, ChevronDown, Check } from "lucide-react";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useModel } from "@/context/ModelContext";
 
 const BdtSymbol = ({ className }: { className?: string }) => (
     <span className={cn("font-bold text-xl leading-none flex items-center justify-center pb-1", className)}>৳</span>
@@ -21,6 +22,9 @@ const navLinks = [
 export function Navbar() {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showImageDropdown, setShowImageDropdown] = useState(false);
+    const [showVideoDropdown, setShowVideoDropdown] = useState(false);
+    const { selectedModel, setSelectedModel, imageModels, videoModels } = useModel();
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -57,8 +61,104 @@ export function Navbar() {
                     <span className="font-bold text-sm sm:text-base text-white tracking-tight">Antigravity AI</span>
                 </Link>
 
-                {/* Nav Links - Desktop */}
+                {/* Model Dropdowns + Nav Links - Desktop */}
                 <div className="hidden md:flex items-center gap-1">
+                    {/* Image Model Dropdown */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => setShowImageDropdown(true)}
+                        onMouseLeave={() => setShowImageDropdown(false)}
+                    >
+                        <button className={cn(
+                            "px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
+                            selectedModel.type === 'image'
+                                ? "text-white bg-purple-500/20"
+                                : "text-white/70 hover:text-white hover:bg-white/10"
+                        )}>
+                            <ImageIcon className="w-4 h-4" />
+                            Image
+                            <ChevronDown className={cn("w-3 h-3 transition-transform", showImageDropdown && "rotate-180")} />
+                        </button>
+                        <AnimatePresence>
+                            {showImageDropdown && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute top-full mt-2 left-0 min-w-[220px] bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+                                >
+                                    {imageModels.map((model) => (
+                                        <button
+                                            key={model.id}
+                                            onClick={() => setSelectedModel(model)}
+                                            className={cn(
+                                                "w-full px-4 py-3 text-left text-sm font-medium transition-colors flex items-center justify-between",
+                                                selectedModel.id === model.id
+                                                    ? "bg-purple-500/20 text-purple-300"
+                                                    : "text-white/70 hover:text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            <div>
+                                                <div>{model.name}</div>
+                                                <div className="text-xs text-white/40">{model.description}</div>
+                                            </div>
+                                            {selectedModel.id === model.id && <Check className="w-4 h-4 text-purple-400" />}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Video Model Dropdown */}
+                    <div
+                        className="relative"
+                        onMouseEnter={() => setShowVideoDropdown(true)}
+                        onMouseLeave={() => setShowVideoDropdown(false)}
+                    >
+                        <button className={cn(
+                            "px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2",
+                            selectedModel.type === 'video'
+                                ? "text-white bg-pink-500/20"
+                                : "text-white/70 hover:text-white hover:bg-white/10"
+                        )}>
+                            <Video className="w-4 h-4" />
+                            Video
+                            <ChevronDown className={cn("w-3 h-3 transition-transform", showVideoDropdown && "rotate-180")} />
+                        </button>
+                        <AnimatePresence>
+                            {showVideoDropdown && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute top-full mt-2 left-0 min-w-[260px] bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl"
+                                >
+                                    {videoModels.map((model) => (
+                                        <button
+                                            key={model.id}
+                                            onClick={() => setSelectedModel(model)}
+                                            className={cn(
+                                                "w-full px-4 py-3 text-left text-sm font-medium transition-colors flex items-center justify-between",
+                                                selectedModel.id === model.id
+                                                    ? "bg-pink-500/20 text-pink-300"
+                                                    : "text-white/70 hover:text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            <div>
+                                                <div>{model.name}</div>
+                                                <div className="text-xs text-white/40">{model.description}</div>
+                                            </div>
+                                            {selectedModel.id === model.id && <Check className="w-4 h-4 text-pink-400" />}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="w-px h-6 bg-white/10 mx-2" />
+
                     {navLinks.map((item) => (
                         <Link
                             key={item.name}
