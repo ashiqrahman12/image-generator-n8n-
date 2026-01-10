@@ -160,7 +160,8 @@ export async function trimVideo(
             blobData = new Uint8Array(data as ArrayBuffer);
         }
 
-        const trimmedBlob = new Blob([blobData], { type: 'video/mp4' });
+        // Use ArrayBuffer for Blob to avoid TypeScript issues with SharedArrayBuffer
+        const trimmedBlob = new Blob([blobData.buffer.slice(blobData.byteOffset, blobData.byteOffset + blobData.byteLength) as ArrayBuffer], { type: 'video/mp4' });
         const trimmedFile = new File([trimmedBlob], `trimmed_video.mp4`, {
             type: 'video/mp4',
             lastModified: Date.now()
