@@ -122,6 +122,9 @@ export function ImageGenerator() {
     const [referenceImages, setReferenceImages] = useState<ReferenceImage[]>([]);
     const [referenceVideo, setReferenceVideo] = useState<File | null>(null);
     const [referenceVideoPreview, setReferenceVideoPreview] = useState<string | null>(null);
+    const [videoDuration, setVideoDuration] = useState<number>(0);
+    const [videoStartTime, setVideoStartTime] = useState<number>(0);
+    const [videoEndTime, setVideoEndTime] = useState<number>(0);
     const [isListening, setIsListening] = useState(false);
     const [selectedStyle, setSelectedStyle] = useState<string>("");
     const [negativePrompt, setNegativePrompt] = useState<string>("");
@@ -129,6 +132,7 @@ export function ImageGenerator() {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
+    const videoPreviewRef = useRef<HTMLVideoElement>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recognitionRef = useRef<any>(null);
 
@@ -242,7 +246,18 @@ export function ImageGenerator() {
         }
 
         setReferenceVideo(videoFile);
-        setReferenceVideoPreview(URL.createObjectURL(videoFile));
+        const videoUrl = URL.createObjectURL(videoFile);
+        setReferenceVideoPreview(videoUrl);
+
+        // Get video duration
+        const tempVideo = document.createElement('video');
+        tempVideo.src = videoUrl;
+        tempVideo.onloadedmetadata = () => {
+            const duration = tempVideo.duration;
+            setVideoDuration(duration);
+            setVideoStartTime(0);
+            setVideoEndTime(duration);
+        };
     };
 
     const removeReferenceVideo = () => {
@@ -251,6 +266,16 @@ export function ImageGenerator() {
         }
         setReferenceVideo(null);
         setReferenceVideoPreview(null);
+        setVideoDuration(0);
+        setVideoStartTime(0);
+        setVideoEndTime(0);
+    };
+
+    // Format time as MM:SS
+    const formatTime = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     const handleGenerate = async () => {
@@ -286,6 +311,8 @@ export function ImageGenerator() {
                 // Add other options
                 formData.append("prompt", prompt);
                 formData.append("negative_prompt", negativePrompt);
+                formData.append("start_time", videoStartTime.toString());
+                formData.append("end_time", videoEndTime.toString());
                 formData.append("character_orientation", "video");
                 formData.append("keep_original_sound", "true");
 
@@ -531,8 +558,8 @@ export function ImageGenerator() {
 
                         {/* Video Reference Preview (for video models) */}
                         {selectedModel.type === 'video' && referenceVideoPreview && (
-                            <div className="mb-3 p-2 bg-pink-900/20 border border-pink-500/30 rounded-xl">
-                                <div className="flex items-center justify-between mb-2">
+                            <div className="mb-3 p-3 bg-pink-900/20 border border-pink-500/30 rounded-xl">
+                                <div className="flex items-center justify-between mb-3">
                                     <p className="text-xs text-pink-300 font-medium flex items-center gap-2">
                                         <Video className="w-4 h-4" />
                                         Motion Reference Video
@@ -544,11 +571,76 @@ export function ImageGenerator() {
                                         Remove
                                     </button>
                                 </div>
-                                <video
-                                    src={referenceVideoPreview}
-                                    controls
-                                    className="w-full max-h-32 rounded-lg object-cover"
-                                />
+
+                                {/* Square Video Preview */}
+                                <div className="flex gap-4 items-start">
+                                    <div className="w-40 h-40 md:w-48 md:h-48 rounded-xl overflow-hidden bg-black/50 flex-shrink-0">
+                                        <video
+                                            ref={videoPreviewRef}
+                                            src={referenceVideoPreview}
+                                            controls
+                                            className="w-full h-full object-contain"
+                                        />
+                                    </div>
+
+                                    {/* Duration Controls */}
+                                    <div className="flex-1 space-y-4">
+                                        <div className="text-xs text-white/60">
+                                            Total Duration: <span className="text-pink-300 font-medium">{formatTime(videoDuration)}</span>
+                                        </div>
+
+                                        {/* Start Time Slider */}
+                                        <div className="space-y-1">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-white/60">Start Time</span>
+                                                <span className="text-green-400 font-mono">{formatTime(videoStartTime)}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={videoDuration}
+                                                step={0.1}
+                                                value={videoStartTime}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    if (val < videoEndTime) {
+                                                        setVideoStartTime(val);
+                                                    }
+                                                }}
+                                                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+                                            />
+                                        </div>
+
+                                        {/* End Time Slider */}
+                                        <div className="space-y-1">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <span className="text-white/60">End Time</span>
+                                                <span className="text-red-400 font-mono">{formatTime(videoEndTime)}</span>
+                                            </div>
+                                            <input
+                                                type="range"
+                                                min={0}
+                                                max={videoDuration}
+                                                step={0.1}
+                                                value={videoEndTime}
+                                                onChange={(e) => {
+                                                    const val = parseFloat(e.target.value);
+                                                    if (val > videoStartTime) {
+                                                        setVideoEndTime(val);
+                                                    }
+                                                }}
+                                                className="w-full h-2 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-red-500"
+                                            />
+                                        </div>
+
+                                        {/* Selected Duration */}
+                                        <div className="pt-2 border-t border-white/10">
+                                            <div className="text-xs text-white/60">
+                                                Selected Duration: <span className="text-pink-300 font-bold">{formatTime(videoEndTime - videoStartTime)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
 

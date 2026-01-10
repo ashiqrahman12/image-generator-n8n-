@@ -86,8 +86,12 @@ async function handleKlingMotionControl(formData: FormData) {
     const videoFile = formData.get("video") as File | null;
     const prompt = formData.get("prompt") as string || "";
     const negativePrompt = formData.get("negative_prompt") as string || "";
+    const startTime = parseFloat(formData.get("start_time") as string || "0");
+    const endTime = parseFloat(formData.get("end_time") as string || "0");
     const characterOrientation = formData.get("character_orientation") as string || "video";
     const keepOriginalSound = formData.get("keep_original_sound") === "true";
+
+    console.log(`Video duration selection: ${startTime}s - ${endTime}s (${endTime - startTime}s total)`);
 
     if (!imageFile) {
         return NextResponse.json(
