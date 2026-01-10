@@ -124,6 +124,7 @@ export function ImageGenerator() {
     const [referenceVideoPreview, setReferenceVideoPreview] = useState<string | null>(null);
     const [isListening, setIsListening] = useState(false);
     const [selectedStyle, setSelectedStyle] = useState<string>("");
+    const [negativePrompt, setNegativePrompt] = useState<string>("");
     const [showStyleDropdown, setShowStyleDropdown] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -283,6 +284,8 @@ export function ImageGenerator() {
                 }
 
                 // Add other options
+                formData.append("prompt", prompt);
+                formData.append("negative_prompt", negativePrompt);
                 formData.append("character_orientation", "video");
                 formData.append("keep_original_sound", "true");
 
@@ -809,7 +812,7 @@ export function ImageGenerator() {
                                             handleGenerate();
                                         }
                                     }}
-                                    placeholder="Describe the scene..."
+                                    placeholder={selectedModel.type === 'video' ? "Describe the motion/action (optional)..." : "Describe the scene..."}
                                     className="flex-1 bg-transparent text-white placeholder:text-white/40 focus:outline-none text-base md:text-sm min-w-0 resize-none overflow-y-auto leading-relaxed"
                                     disabled={loading}
                                     rows={1}
@@ -817,13 +820,27 @@ export function ImageGenerator() {
                                 />
                             </div>
 
+                            {/* Negative Prompt Input - Only for video models */}
+                            {selectedModel.type === 'video' && (
+                                <div className="flex items-center gap-2 flex-1 min-w-0 bg-red-900/20 border border-red-500/30 rounded-2xl px-3 py-2 md:px-4 md:py-2">
+                                    <input
+                                        type="text"
+                                        value={negativePrompt}
+                                        onChange={(e) => setNegativePrompt(e.target.value)}
+                                        placeholder="Negative prompt (what to avoid)..."
+                                        className="flex-1 bg-transparent text-red-200 placeholder:text-red-400/50 focus:outline-none text-sm min-w-0"
+                                        disabled={loading}
+                                    />
+                                </div>
+                            )}
+
                             {/* Generate Button */}
                             <button
                                 onClick={handleGenerate}
-                                disabled={loading || !prompt.trim()}
+                                disabled={loading || (selectedModel.type === 'image' && !prompt.trim())}
                                 className={cn(
                                     "px-4 md:px-6 py-3 md:py-3 rounded-2xl font-bold text-sm md:text-sm flex items-center gap-2 transition-all shrink-0",
-                                    loading || !prompt.trim()
+                                    loading || (selectedModel.type === 'image' && !prompt.trim())
                                         ? "bg-zinc-700 text-white/50 cursor-not-allowed"
                                         : "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 md:hover:scale-105"
                                 )}

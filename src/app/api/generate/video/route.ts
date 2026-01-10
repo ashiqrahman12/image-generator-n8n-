@@ -11,13 +11,15 @@ async function fileToDataUrl(file: File): Promise<string> {
     return `data:${file.type};base64,${base64}`;
 }
 
-// Helper function to poll for result
-async function pollForResult(requestId: string, maxAttempts: number = 120): Promise<string[]> {
+// Helper function to poll for result (no timeout - waits indefinitely)
+async function pollForResult(requestId: string): Promise<string[]> {
     const headers = {
         "Authorization": `Bearer ${WAVESPEED_API_KEY}`
     };
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    let attempt = 0;
+    while (true) {
+        attempt++;
         const response = await fetch(`${WAVESPEED_RESULT_URL}/${requestId}/result`, { headers });
         const result = await response.json();
 
@@ -30,16 +32,14 @@ async function pollForResult(requestId: string, maxAttempts: number = 120): Prom
             } else if (status === "failed") {
                 throw new Error(`Video generation failed: ${data.error || "Unknown error"}`);
             }
-            console.log(`Video generation status: ${status}, attempt ${attempt + 1}/${maxAttempts}`);
+            console.log(`Video generation status: ${status}, attempt ${attempt}`);
         } else {
             throw new Error(`Polling error: ${response.status} - ${JSON.stringify(result)}`);
         }
 
-        // Wait 2 seconds before next poll (video takes longer)
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait 3 seconds before next poll (video takes longer)
+        await new Promise(resolve => setTimeout(resolve, 3000));
     }
-
-    throw new Error("Video generation timed out");
 }
 
 export async function POST(req: Request) {
@@ -84,6 +84,8 @@ export async function POST(req: Request) {
 async function handleKlingMotionControl(formData: FormData) {
     const imageFile = formData.get("image") as File | null;
     const videoFile = formData.get("video") as File | null;
+    const prompt = formData.get("prompt") as string || "";
+    const negativePrompt = formData.get("negative_prompt") as string || "";
     const characterOrientation = formData.get("character_orientation") as string || "video";
     const keepOriginalSound = formData.get("keep_original_sound") === "true";
 
@@ -108,6 +110,8 @@ async function handleKlingMotionControl(formData: FormData) {
     const payload = {
         image: imageDataUrl,
         video: videoDataUrl,
+        prompt: prompt,
+        negative_prompt: negativePrompt,
         character_orientation: characterOrientation,
         keep_original_sound: keepOriginalSound
     };
