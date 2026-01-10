@@ -604,8 +604,8 @@ export function ImageGenerator() {
                 <div className="max-w-4xl mx-auto">
                     <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl p-3 md:p-4 shadow-2xl shadow-black/50">
 
-                        {/* Reference Images Preview */}
-                        {referenceImages.length > 0 && (
+                        {/* Reference Images Preview - Only for image models */}
+                        {selectedModel.type === 'image' && referenceImages.length > 0 && (
                             <div className="mb-3 p-2 bg-zinc-800/50 rounded-xl">
                                 <div className="flex items-center justify-between mb-2">
                                     <p className="text-xs text-white/70 font-medium">
