@@ -142,7 +142,7 @@ export function ImageGenerator() {
         const recognition = new SpeechRecognition();
         recognitionRef.current = recognition;
 
-        recognition.continuous = false;
+        recognition.continuous = true;  // Keep listening until manually stopped
         recognition.interimResults = true;
         recognition.lang = 'en-US';
 
@@ -157,10 +157,27 @@ export function ImageGenerator() {
             setPrompt(transcript);
         };
 
-        recognition.onerror = () => setIsListening(false);
-        recognition.onend = () => setIsListening(false);
+        recognition.onerror = (event: any) => {
+            console.error('Speech recognition error:', event.error);
+            if (event.error !== 'no-speech') {
+                setIsListening(false);
+            }
+        };
+
+        // Don't auto-stop on end - only stop when user clicks button
+        recognition.onend = () => {
+            // If still supposed to be listening, restart (handles browser auto-stop)
+            if (isListening && recognitionRef.current) {
+                try {
+                    recognitionRef.current.start();
+                } catch (e) {
+                    setIsListening(false);
+                }
+            }
+        };
 
         recognition.start();
+        setIsListening(true);
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
