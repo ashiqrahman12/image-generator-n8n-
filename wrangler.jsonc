@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
   "name": "ai-image-generator",
-  "compatibility_date": "2026-02-15",
+  "compatibility_date": "2026-01-20",
   "compatibility_flags": [
     "nodejs_compat"
   ],
